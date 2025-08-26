@@ -1,0 +1,24 @@
+[
+  {
+    "model": "api.path",
+    "pk": 1,
+    "fields": {
+      "sync_type": "add_user",
+      "path": "/ZOIME-WBS/api/User/PostUser",
+      "description": "Endpoint to post a new user to the ZOIME-WBS system.",
+      "created_at": "2022-01-01T12:00:00Z",
+      "updated_at": "2022-01-01T12:00:00Z"
+    }
+  },
+  {
+    "model": "api.path",
+    "pk": 2,
+    "fields": {
+      "sync_type": "add_user_local",
+      "path": "/user/creat-user",
+      "description": "Endpoint for creating a new user locally.",
+      "created_at": "2022-01-01T12:00:00Z",
+      "updated_at": "2022-01-01T12:00:00Z"
+    }
+  }
+]

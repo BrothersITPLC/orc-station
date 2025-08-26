@@ -1,0 +1,57 @@
+[
+  {
+    "model": "workstations.workstation",
+    "pk": 1,
+    "fields": {
+      "name": "Bordede",
+      "machine_number": "001",
+
+      "created_at": "2024-07-28T15:25:20.040Z",
+      "updated_at": "2024-07-28T15:25:20.040Z",
+      "kebele": "",
+      "woreda": 31,
+      "managed_by": null
+    }
+  },
+  {
+    "model": "workstations.workstation",
+    "pk": 2,
+    "fields": {
+      "name": "Dengego",
+      "machine_number": "002",
+      "created_at": "2024-07-28T15:25:20.040Z",
+      "updated_at": "2024-07-28T15:25:20.040Z",
+      "kebele": "",
+      "woreda": 32,
+      "managed_by": null
+    }
+  },
+  {
+    "model": "workstations.workstation",
+    "pk": 3,
+    "fields": {
+      "name": "Awaday",
+      "machine_number": "003",
+
+      "created_at": "2024-07-28T15:25:20.040Z",
+      "updated_at": "2024-07-28T15:25:20.040Z",
+      "kebele": "",
+      "woreda": 33,
+      "managed_by": null
+    }
+  },
+  {
+    "model": "workstations.workstation",
+    "pk": 4,
+    "fields": {
+      "name": "Babille",
+      "machine_number": "004",
+
+      "created_at": "2024-07-28T15:25:20.040Z",
+      "updated_at": "2024-07-28T15:25:20.040Z",
+      "kebele": "",
+      "woreda": 21,
+      "managed_by": null
+    }
+  }
+]

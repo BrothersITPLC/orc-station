@@ -1,0 +1,28 @@
+[
+  {
+    "model": "users.customuser",
+    "pk": 1,
+    "fields": {
+      "password": "pbkdf2_sha256$260000$rBqycmpL6HHdD5tWkvBNqV$bBsD7CIXrgkWTP+9TUZKPfLbj1detYfPUM5cfWJEFq4=",
+      "last_login": "2024-07-29T07:00:48.827Z",
+      "is_superuser": true,
+      "username": "aman",
+      "first_name": "",
+      "last_name": "",
+      "email": "",
+      "is_staff": true,
+      "is_active": true,
+      "date_joined": "2024-07-29T06:58:36.865Z",
+      "email_verified": false,
+      "email_verification_token": null,
+      "department": null,
+      "phone_number": null,
+      "role": null,
+      "manager": null,
+      "session_token": null,
+      "current_station": null,
+      "groups": [],
+      "user_permissions": []
+    }
+  }
+]

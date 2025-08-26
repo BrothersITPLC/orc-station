@@ -1,0 +1,338 @@
+[
+  {
+    "model": "tax.tax",
+    "pk": 1,
+    "fields": {
+      "name": null,
+      "station": 1,
+      "tax_payer_type": 1,
+      "commodity": 1,
+      "percentage": "25.00",
+      "created_at": "2024-07-28T19:20:41.841Z",
+      "updated_at": "2024-07-28T19:20:41.841Z",
+      "created_by": 2
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 2,
+    "fields": {
+      "name": null,
+      "station": 1,
+      "tax_payer_type": 2,
+      "commodity": 1,
+      "percentage": "20.00",
+      "created_at": "2024-07-28T19:21:00.367Z",
+      "updated_at": "2024-07-28T19:21:00.367Z",
+      "created_by": 2
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 3,
+    "fields": {
+      "name": null,
+      "station": 2,
+      "tax_payer_type": 1,
+      "commodity": 1,
+      "percentage": "25.00",
+      "created_at": "2024-07-28T19:21:24.984Z",
+      "updated_at": "2024-07-28T19:21:24.984Z",
+      "created_by": 2
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 4,
+    "fields": {
+      "name": null,
+      "station": 2,
+      "tax_payer_type": 2,
+      "commodity": 1,
+      "percentage": "20.00",
+      "created_at": "2024-07-28T19:21:49.499Z",
+      "updated_at": "2024-07-28T19:21:49.499Z",
+      "created_by": 2
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 5,
+    "fields": {
+      "name": null,
+      "station": 3,
+      "tax_payer_type": 1,
+      "commodity": 1,
+      "percentage": "30.00",
+      "created_at": "2024-07-28T19:22:11.241Z",
+      "updated_at": "2024-07-28T19:22:11.241Z",
+      "created_by": 2
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 6,
+    "fields": {
+      "name": null,
+      "station": 3,
+      "tax_payer_type": 2,
+      "commodity": 1,
+      "percentage": "25.00",
+      "created_at": "2024-07-28T19:22:33.353Z",
+      "updated_at": "2024-07-28T19:22:33.353Z",
+      "created_by": 2
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 7,
+    "fields": {
+      "name": null,
+      "station": 4,
+      "tax_payer_type": 1,
+      "commodity": 1,
+      "percentage": "25.00",
+      "created_at": "2024-07-28T19:23:17.082Z",
+      "updated_at": "2024-07-28T19:23:17.082Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 8,
+    "fields": {
+      "name": null,
+      "station": 4,
+      "tax_payer_type": 2,
+      "commodity": 1,
+      "percentage": "20.00",
+      "created_at": "2024-07-28T19:23:35.333Z",
+      "updated_at": "2024-07-28T19:23:35.333Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 9,
+    "fields": {
+      "name": null,
+      "station": 1,
+      "tax_payer_type": 1,
+      "commodity": 2,
+      "percentage": "30.00",
+      "created_at": "2024-07-28T19:38:44.660Z",
+      "updated_at": "2024-07-28T19:38:44.660Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 10,
+    "fields": {
+      "name": null,
+      "station": 1,
+      "tax_payer_type": 2,
+      "commodity": 2,
+      "percentage": "25.00",
+      "created_at": "2024-07-28T19:39:01.038Z",
+      "updated_at": "2024-07-28T19:39:01.039Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 11,
+    "fields": {
+      "name": null,
+      "station": 2,
+      "tax_payer_type": 1,
+      "commodity": 2,
+      "percentage": "30.00",
+      "created_at": "2024-07-28T19:39:21.970Z",
+      "updated_at": "2024-07-28T19:39:21.970Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 12,
+    "fields": {
+      "name": null,
+      "station": 2,
+      "tax_payer_type": 2,
+      "commodity": 2,
+      "percentage": "25.00",
+      "created_at": "2024-07-28T19:39:35.909Z",
+      "updated_at": "2024-07-28T19:39:35.909Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 13,
+    "fields": {
+      "name": null,
+      "station": 3,
+      "tax_payer_type": 1,
+      "commodity": 2,
+      "percentage": "35.00",
+      "created_at": "2024-07-28T19:40:05.217Z",
+      "updated_at": "2024-07-28T19:40:05.217Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 14,
+    "fields": {
+      "name": null,
+      "station": 3,
+      "tax_payer_type": 2,
+      "commodity": 2,
+      "percentage": "30.00",
+      "created_at": "2024-07-28T19:40:21.747Z",
+      "updated_at": "2024-07-28T19:40:21.747Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 15,
+    "fields": {
+      "name": null,
+      "station": 4,
+      "tax_payer_type": 1,
+      "commodity": 2,
+      "percentage": "30.00",
+      "created_at": "2024-07-28T19:40:54.469Z",
+      "updated_at": "2024-07-28T19:40:54.469Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 16,
+    "fields": {
+      "name": null,
+      "station": 4,
+      "tax_payer_type": 2,
+      "commodity": 2,
+      "percentage": "25.00",
+      "created_at": "2024-07-28T19:41:09.141Z",
+      "updated_at": "2024-07-28T19:41:09.141Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 17,
+    "fields": {
+      "name": null,
+      "station": 1,
+      "tax_payer_type": 1,
+      "commodity": 3,
+      "percentage": "40.00",
+      "created_at": "2024-07-28T19:41:45.166Z",
+      "updated_at": "2024-07-28T19:41:45.166Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 18,
+    "fields": {
+      "name": null,
+      "station": 1,
+      "tax_payer_type": 2,
+      "commodity": 3,
+      "percentage": "40.00",
+      "created_at": "2024-07-28T19:42:47.773Z",
+      "updated_at": "2024-07-28T19:42:47.773Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 19,
+    "fields": {
+      "name": null,
+      "station": 2,
+      "tax_payer_type": 1,
+      "commodity": 3,
+      "percentage": "40.00",
+      "created_at": "2024-07-28T19:43:10.428Z",
+      "updated_at": "2024-07-28T19:43:10.428Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 20,
+    "fields": {
+      "name": null,
+      "station": 2,
+      "tax_payer_type": 2,
+      "commodity": 3,
+      "percentage": "40.00",
+      "created_at": "2024-07-28T19:43:25.855Z",
+      "updated_at": "2024-07-28T19:43:25.855Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 21,
+    "fields": {
+      "name": null,
+      "station": 3,
+      "tax_payer_type": 1,
+      "commodity": 3,
+      "percentage": "40.00",
+      "created_at": "2024-07-28T19:43:59.858Z",
+      "updated_at": "2024-07-28T19:43:59.858Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 22,
+    "fields": {
+      "name": null,
+      "station": 3,
+      "tax_payer_type": 2,
+      "commodity": 3,
+      "percentage": "40.00",
+      "created_at": "2024-07-28T19:44:14.638Z",
+      "updated_at": "2024-07-28T19:44:14.638Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 23,
+    "fields": {
+      "name": null,
+      "station": 4,
+      "tax_payer_type": 1,
+      "commodity": 3,
+      "percentage": "40.00",
+      "created_at": "2024-07-28T19:44:45.719Z",
+      "updated_at": "2024-07-28T19:44:45.719Z",
+      "created_by": 10
+    }
+  },
+  {
+    "model": "tax.tax",
+    "pk": 24,
+    "fields": {
+      "name": null,
+      "station": 4,
+      "tax_payer_type": 2,
+      "commodity": 3,
+      "percentage": "40.00",
+      "created_at": "2024-07-28T19:45:08.261Z",
+      "updated_at": "2024-07-28T19:45:08.261Z",
+      "created_by": 10
+    }
+  }
+]

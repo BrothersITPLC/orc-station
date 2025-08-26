@@ -1,0 +1,48 @@
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+.env/
+
+# Local settings
+*.sqlite3
+
+# Logs
+*.log
+
+# Media and static files
+/media/
+staticfiles/
+
+# Test coverage reports
+htmlcov/
+.coverage
+*.cover
+.cache
+
+# Build artifacts
+*.egg-info/
+*.egg
+build/
+dist/
+*.whl
+
+# Docker
+Dockerfile
+docker-compose.yml
+*.swp
+
+# IDE and editor settings
+.vscode/
+.idea/
+*.iml
+
+# Node.js and frontend
+node_modules/
+npm-debug.log
+yarn-error.log
+config
+
+sonar-project.properties

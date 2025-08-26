@@ -1,0 +1,22 @@
+[
+  {
+    "model": "exporters.taxpayertype",
+    "pk": 1,
+    "fields": {
+      "name": "regular",
+      "created_at": "2024-07-01T12:00:00Z",
+      "updated_at": "2024-07-01T12:00:00Z",
+      "created_by": 2
+    }
+  },
+  {
+    "model": "exporters.taxpayertype",
+    "pk": 2,
+    "fields": {
+      "name": "walk in",
+      "created_at": "2024-07-02T14:00:00Z",
+      "updated_at": "2024-07-02T14:00:00Z",
+      "created_by": 2
+    }
+  }
+]

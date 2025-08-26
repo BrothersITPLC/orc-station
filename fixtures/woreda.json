@@ -1,0 +1,365 @@
+[
+  {
+    "model": "address.woreda",
+    "pk": 1,
+    "fields": {
+      "name": "Modjo",
+      "zone": 13,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 2,
+    "fields": {
+      "name": "Wonji",
+      "zone": 13,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 3,
+    "fields": {
+      "name": "Batu",
+      "zone": 13,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 4,
+    "fields": {
+      "name": "Ambo",
+      "zone": 14,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 5,
+    "fields": {
+      "name": "Dedo",
+      "zone": 14,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 6,
+    "fields": {
+      "name": "Gomma",
+      "zone": 14,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 7,
+    "fields": {
+      "name": "Limmu Kosa",
+      "zone": 14,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 8,
+    "fields": {
+      "name": "Mana",
+      "zone": 14,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 9,
+    "fields": {
+      "name": "Dinsho",
+      "zone": 15,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 10,
+    "fields": {
+      "name": "Goba",
+      "zone": 15,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 11,
+    "fields": {
+      "name": "Rira",
+      "zone": 15,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 12,
+    "fields": {
+      "name": "Yabelo",
+      "zone": 16,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 13,
+    "fields": {
+      "name": "Mega",
+      "zone": 16,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 14,
+    "fields": {
+      "name": "Bishoftu",
+      "zone": 17,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 15,
+    "fields": {
+      "name": "Asores",
+      "zone": 17,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 16,
+    "fields": {
+      "name": "Chalchisa",
+      "zone": 17,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 17,
+    "fields": {
+      "name": "Arisi negele",
+      "zone": 22,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 18,
+    "fields": {
+      "name": "Nono",
+      "zone": 18,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 19,
+    "fields": {
+      "name": "Kilte",
+      "zone": 18,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 20,
+    "fields": {
+      "name": "Harar",
+      "zone": 19,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 21,
+    "fields": {
+      "name": "Babile",
+      "zone": 19,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 22,
+    "fields": {
+      "name": "Gursum",
+      "zone": 19,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 23,
+    "fields": {
+      "name": "Chiro",
+      "zone": 20,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 24,
+    "fields": {
+      "name": "Mieso",
+      "zone": 20,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 25,
+    "fields": {
+      "name": "Kelem",
+      "zone": 20,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 26,
+    "fields": {
+      "name": "Adola",
+      "zone": 21,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 27,
+    "fields": {
+      "name": "Gumi",
+      "zone": 21,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 28,
+    "fields": {
+      "name": "Shakiso",
+      "zone": 21,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 29,
+    "fields": {
+      "name": "Shashemene",
+      "zone": 22,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 30,
+    "fields": {
+      "name": "Dallo",
+      "zone": 22,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 31,
+    "fields": {
+      "name": "Bordede",
+      "zone": 19,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 32,
+    "fields": {
+      "name": "Dengego",
+      "zone": 19,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "address.woreda",
+    "pk": 33,
+    "fields": {
+      "name": "Awaday",
+      "zone": 19,
+      "created_at": "2024-08-03T12:00:00Z",
+      "updated_at": "2024-08-03T12:00:00Z",
+      "created_by": 1
+    }
+  }
+]

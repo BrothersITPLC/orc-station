@@ -1,0 +1,342 @@
+[
+  {
+    "model": "exporters.exporter",
+    "pk": 1,
+    "fields": {
+      "first_name": "Muna",
+      "last_name": "Abdulla",
+      "type": 1,
+      "license_number": "LIC001",
+      "woreda": 3,
+      "kebele": "01",
+      "tin_number": "TIN001",
+      "created_at": "2023-01-01T08:00:00Z",
+      "updated_at": "2023-01-01T08:00:00Z",
+      "register_place": 1,
+      "register_by": 3
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 2,
+    "fields": {
+      "first_name": "Ali",
+      "last_name": "Abubakar",
+      "type": 1,
+      "license_number": "LIC002",
+      "woreda": 6,
+      "kebele": "03",
+      "tin_number": "TIN002",
+      "created_at": "2023-01-02T09:00:00Z",
+      "updated_at": "2023-01-02T09:00:00Z",
+      "register_place": 2,
+      "register_by": 6
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 3,
+    "fields": {
+      "first_name": "Rahma",
+      "last_name": "Jibril",
+      "type": 2,
+      "license_number": null,
+      "woreda": 21,
+      "kebele": "06",
+      "tin_number": null,
+      "created_at": "2024-04-03T10:00:00Z",
+      "updated_at": "2024-04-03T10:00:00Z",
+      "register_place": 1,
+      "register_by": 3
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 4,
+    "fields": {
+      "first_name": "Mustafa",
+      "last_name": "Nur",
+      "type": 2,
+      "license_number": null,
+      "woreda": 21,
+      "kebele": "04",
+      "tin_number": null,
+      "created_at": "2024-04-04T11:00:00Z",
+      "updated_at": "2024-04-04T11:00:00Z",
+      "register_place": 2,
+      "register_by": 6
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 5,
+    "fields": {
+      "first_name": "Aisha",
+      "last_name": "Farah",
+      "type": 1,
+      "license_number": "LIC005",
+      "woreda": 31,
+      "kebele": "02",
+      "tin_number": "TIN005",
+      "created_at": "2024-05-01T08:00:00Z",
+      "updated_at": "2024-05-01T08:00:00Z",
+      "register_place": 1,
+      "register_by": 3
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 6,
+    "fields": {
+      "first_name": "Yusuf",
+      "last_name": "Mohammed",
+      "type": 1,
+      "license_number": "LIC006",
+      "woreda": 23,
+      "kebele": "05",
+      "tin_number": "TIN006",
+      "created_at": "2024-05-02T09:00:00Z",
+      "updated_at": "2024-05-02T09:00:00Z",
+      "register_place": 1,
+      "register_by": 3
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 7,
+    "fields": {
+      "first_name": "Hanifa",
+      "last_name": "Adam",
+      "type": 2,
+      "license_number": null,
+      "woreda": 9,
+      "kebele": "06",
+      "tin_number": null,
+      "created_at": "2024-04-03T10:00:00Z",
+      "updated_at": "2024-05-03T10:00:00Z",
+      "register_place": 2,
+      "register_by": 7
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 8,
+    "fields": {
+      "first_name": "Idris",
+      "last_name": "Mahmud",
+      "type": 2,
+      "license_number": null,
+      "woreda": 25,
+      "kebele": "04",
+      "tin_number": null,
+      "created_at": "2024-06-04T11:00:00Z",
+      "updated_at": "2024-06-04T11:00:00Z",
+      "register_place": 2,
+      "register_by": 7
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 9,
+    "fields": {
+      "first_name": "Khadija",
+      "last_name": "Ali",
+      "type": 1,
+      "license_number": "LIC009",
+      "woreda": 10,
+      "kebele": "06",
+      "tin_number": "TIN009",
+      "created_at": "2024-06-01T08:00:00Z",
+      "updated_at": "2024-06-01T08:00:00Z",
+      "register_place": 2,
+      "register_by": 7
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 10,
+    "fields": {
+      "first_name": "Abdul",
+      "last_name": "Rahman",
+      "type": 1,
+      "license_number": "LIC010",
+      "woreda": 30,
+      "kebele": "01",
+      "tin_number": "TIN010",
+      "created_at": "2024-06-02T09:00:00Z",
+      "updated_at": "2024-06-02T09:00:00Z",
+      "register_place": 1,
+      "register_by": 3
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 11,
+    "fields": {
+      "first_name": "Asma",
+      "last_name": "Suleiman",
+      "type": 2,
+      "license_number": null,
+      "woreda": 27,
+      "kebele": "05",
+      "tin_number": null,
+      "created_at": "2024-07-03T10:00:00Z",
+      "updated_at": "2024-07-03T10:00:00Z",
+      "register_place": 1,
+      "register_by": 3
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 12,
+    "fields": {
+      "first_name": "Hassan",
+      "last_name": "Ibrahim",
+      "type": 2,
+      "license_number": null,
+      "woreda": 29,
+      "kebele": "04",
+      "tin_number": null,
+      "created_at": "2024-07-04T11:00:00Z",
+      "updated_at": "2024-07-04T11:00:00Z",
+      "register_place": 1,
+      "register_by": 6
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 13,
+    "fields": {
+      "first_name": "Rania",
+      "last_name": "Ahmed",
+      "type": 1,
+      "license_number": "LIC013",
+      "woreda": 3,
+      "kebele": "08",
+      "tin_number": "TIN013",
+      "created_at": "2024-07-01T08:00:00Z",
+      "updated_at": "2024-07-01T08:00:00Z",
+      "register_place": 2,
+      "register_by": 6
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 14,
+    "fields": {
+      "first_name": "Ahmed",
+      "last_name": "Osman",
+      "type": 1,
+      "license_number": "LIC014",
+      "woreda": 26,
+      "kebele": "01",
+      "tin_number": "TIN014",
+      "created_at": "2024-07-02T09:00:00Z",
+      "updated_at": "2024-07-02T09:00:00Z",
+      "register_place": 1,
+      "register_by": 3
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 15,
+    "fields": {
+      "first_name": "Samira",
+      "last_name": "Hussein",
+      "type": 2,
+      "license_number": null,
+      "woreda": 32,
+      "kebele": "05",
+      "tin_number": null,
+      "created_at": "2024-07-03T10:00:00Z",
+      "updated_at": "2024-07-03T10:00:00Z",
+      "register_place": 1,
+      "register_by": 3
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 16,
+    "fields": {
+      "first_name": "Mohamed",
+      "last_name": "Ahmed",
+      "type": 2,
+      "license_number": null,
+      "woreda": 7,
+      "kebele": "02",
+      "tin_number": null,
+      "created_at": "2024-04-04T11:00:00Z",
+      "updated_at": "2024-04-04T11:00:00Z",
+      "register_place": 1,
+      "register_by": 3
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 17,
+    "fields": {
+      "first_name": "Noor",
+      "last_name": "Mohamed",
+      "type": 1,
+      "license_number": "LIC017",
+      "woreda": 9,
+      "kebele": "05",
+      "tin_number": "TIN017",
+      "created_at": "2024-06-01T08:00:00Z",
+      "updated_at": "2024-06-01T08:00:00Z",
+      "register_place": 2,
+      "register_by": 6
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 18,
+    "fields": {
+      "first_name": "Muna",
+      "last_name": "Ali",
+      "type": 1,
+      "license_number": "LIC018",
+      "woreda": 13,
+      "kebele": "03",
+      "tin_number": "TIN018",
+      "created_at": "2024-05-02T09:00:00Z",
+      "updated_at": "2024-05-02T09:00:00Z",
+      "register_place": 1,
+      "register_by": 3
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 19,
+    "fields": {
+      "first_name": "Abdulaziz",
+      "last_name": "Mohamed",
+      "type": 2,
+      "license_number": null,
+      "woreda": 19,
+      "kebele": "04",
+      "tin_number": null,
+      "created_at": "2024-05-03T10:00:00Z",
+      "updated_at": "2024-05-03T10:00:00Z",
+      "register_place": 2,
+      "register_by": 3
+    }
+  },
+  {
+    "model": "exporters.exporter",
+    "pk": 20,
+    "fields": {
+      "first_name": "Amani",
+      "last_name": "Ibrahim",
+      "type": 2,
+      "license_number": null,
+      "woreda": 20,
+      "kebele": "06",
+      "tin_number": null,
+      "created_at": "2024-05-04T11:00:00Z",
+      "updated_at": "2024-05-04T11:00:00Z",
+      "register_place": 1,
+      "register_by": 2
+    }
+  }
+]

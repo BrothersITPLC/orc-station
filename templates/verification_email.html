@@ -1,0 +1,20 @@
+<!-- verification_email.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Email Verification</title>
+  </head>
+  <body>
+    <p>Dear {{ user.username }},</p>
+    <p>
+      Thank you for registering. Please click the link below to verify your
+      email:
+    </p>
+    <p><a href="{{ verification_link }}">Verify Email</a></p>
+    <p>If you did not request this, please ignore this email.</p>
+    <p>Best regards,</p>
+    <p>INSA App Team</p>
+  </body>
+</html>
