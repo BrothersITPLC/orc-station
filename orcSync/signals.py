@@ -18,7 +18,7 @@ def create_log_entry(instance, action):
 
     LocalChangeLog.objects.create(
         content_type=ContentType.objects.get_for_model(instance.__class__),
-        object_id=instance.pk,
+        object_id=str(instance.pk),
         action=action,
         data_payload=serializer.data,
     )

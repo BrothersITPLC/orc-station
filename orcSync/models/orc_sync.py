@@ -73,7 +73,7 @@ class LocalChangeLog(models.Model):
     )
 
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.UUIDField()
+    object_id = models.CharField(max_length=255)
     changed_object = GenericForeignKey("content_type", "object_id")
     retry_count = models.PositiveIntegerField(
         default=0, help_text="Number of times this entry has failed to sync."

@@ -175,9 +175,13 @@ SYNCHRONIZABLE_MODELS = [
     "exporters.TaxPayerType",
     "exporters.Exporter",
     "tax.Tax",
+    "users.Report",
+    "users.UserStatus",
+    "users.CustomUser",
+    "users.Department",
 ]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-CRONJOBS = [("*/5 * * * *", "orcSync.cron.run_sync", ">> /app/logs/cron.log 2>&1")]
+CRONJOBS = [("*/1 * * * *", "orcSync.cron.run_sync", ">> /app/logs/cron.log 2>&1")]
