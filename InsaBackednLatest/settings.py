@@ -79,10 +79,10 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 WSGI_APPLICATION = "InsaBackednLatest.wsgi.application"
 CORS_ALLOW_CREDENTIALS = os.environ.get("CORS_ALLOW_CREDENTIALS") == "True"
 CORS_ALLOW_HEADERS = os.environ.get("CORS_ALLOW_HEADERS", "").split(",")
-
+ALLOWED_HOSTS.append("*")
 CORS_ALLOW_METHODS = os.environ.get("CORS_ALLOW_METHODS", "").split(",")
 
-
+CORS_ALLOW_METHODS.extend(["OPTIONS", "GET", "POST", "PUT", "DELETE"])
 # JWT settings
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(
@@ -129,6 +129,7 @@ INSTALLED_APPS = [
     "news",
     "api",
     "orcSync",
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
@@ -184,4 +185,31 @@ SYNCHRONIZABLE_MODELS = [
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-CRONJOBS = [("*/5 * * * *", "orcSync.cron.run_sync", ">> /app/logs/cron.log 2>&1")]
+# CRONJOBS = [("* * * * *", "orcSync.cron.run_sync", ">> /app/logs/cron.log 2>&1")]
+
+
+from celery.schedules import crontab
+from decouple import config
+
+# Redis as broker and backend
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = config(
+    "CELERY_RESULT_BACKEND", default="redis://localhost:6379/1"
+)
+
+# Enable task acknowledgment and retries
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_RETRY_POLICY = {
+    "max_retries": 5,
+    "interval_start": 5,  # 5 seconds initial delay
+    "interval_step": 1,  # increase by 30s
+    "interval_max": 300,  # up to 5 minutes
+}
+
+# Periodic sync schedule
+CELERY_BEAT_SCHEDULE = {
+    "sync-with-central": {
+        "task": "orcSync.tasks.run_sync_task",
+        "schedule": crontab(minute="*/1"),  # Every 5 minutes
+    },
+}

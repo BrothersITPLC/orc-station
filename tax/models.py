@@ -1,10 +1,11 @@
 from django.db import models
 
+from base.models import BaseModel
 from declaracions.models import Commodity
 
 
 # Create your models here.
-class Tax(models.Model):
+class Tax(BaseModel):
     name = models.CharField(max_length=100, blank=True, null=True)
     station = models.ForeignKey("workstations.WorkStation", on_delete=models.CASCADE)
     tax_payer_type = models.ForeignKey(

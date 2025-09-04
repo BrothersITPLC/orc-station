@@ -1,10 +1,11 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager, Group
 from django.db import models, transaction
 
+from base.models import BaseModel
 from utils import uploadTo
 
 
-class Department(models.Model):
+class Department(BaseModel):
     name = models.CharField(max_length=100, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -20,7 +21,7 @@ class Department(models.Model):
 
 
 # Create your models here.
-class CustomUser(AbstractUser):
+class CustomUser(AbstractUser, BaseModel):
     GENDER_CHOICES = [
         ("Female", "Female"),
         ("Male", "Male"),
@@ -94,7 +95,7 @@ class CustomUser(AbstractUser):
         return f"{self.first_name} {self.last_name} ({self.username})"
 
 
-class UserStatus(models.Model):
+class UserStatus(BaseModel):
     status_choices = [("active", "Active"), ("inactive", "Inactive")]
     status = models.CharField(
         max_length=10,
@@ -120,7 +121,7 @@ class UserStatus(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
-class Report(models.Model):
+class Report(BaseModel):
     employee = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, related_name="employee_reports"
     )

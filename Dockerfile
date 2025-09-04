@@ -24,10 +24,9 @@ COPY . /app/
 # Create log directory AFTER copying
 RUN mkdir -p /app/logs
 
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
+RUN chmod +x /app/start.sh
 
 EXPOSE 8000
 
 # Set the command to our new script
-CMD ["/start.sh"]
+CMD ["sh", "/app/start.sh"]

@@ -1,12 +1,13 @@
 from django.db import models
 
+from base.models import BaseModel
 from declaracions.models import Commodity, PaymentMethod
 from exporters.models import Exporter
 from workstations.models import WorkStation
 
 
 # Create your models here.
-class JourneyWithoutTruck(models.Model):
+class JourneyWithoutTruck(BaseModel):
     STATUS_CHOICES = [
         ("PENDING", "Pending"),
         ("ON_GOING", "On Going"),

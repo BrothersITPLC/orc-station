@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   insadb:
     image: postgres:15
@@ -11,8 +13,22 @@ services:
     networks:
       - dengego_orc_net
     restart: always
+
+  redis:
+    image: redis:7
+    container_name: dengego_redis
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - dengego_orc_net
+    restart: always
+
   django_server:
     build: .
+    container_name: dengego_django
     env_file:
       - .env
     volumes:
@@ -22,12 +38,51 @@ services:
       - "8002:8000"
     depends_on:
       - insadb
+      - redis
+    networks:
+      - dengego_orc_net
+    restart: always
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn InsaBackednLatest.wsgi:application --bind 0.0.0.0:8000"
+
+  celery_worker:
+    build: .
+    container_name: dengego_celery_worker
+    env_file:
+      - .env
+    command: celery -A InsaBackednLatest  worker -l info
+    depends_on:
+      - redis
+      - insadb
+      - django_server
+    volumes:
+      - .:/app
+    networks:
+      - dengego_orc_net
+    restart: always
+
+  celery_beat:
+    build: .
+    container_name: dengego_celery_beat
+    env_file:
+      - .env
+    command: celery -A InsaBackednLatest  beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      - redis
+      - insadb
+      - django_server
+    volumes:
+      - .:/app
     networks:
       - dengego_orc_net
     restart: always
 
 volumes:
   dengego_postgres_data:
+  redis_data:
+
 networks:
   dengego_orc_net:
     external: true

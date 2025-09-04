@@ -1,11 +1,12 @@
 from django.db import models
 from django.db.models import F, Max, Q
 
+from base.models import BaseModel
 from workstations.models import WorkStation
 
 
 # Create your models here.
-class Path(models.Model):
+class Path(BaseModel):
     name = models.CharField(max_length=100, null=True)
     # start_station = models.ForeignKey(
     #     WorkStation, on_delete=models.RESTRICT, related_name="path_start"
@@ -23,7 +24,7 @@ class Path(models.Model):
         return self.name
 
 
-class PathStation(models.Model):
+class PathStation(BaseModel):
 
     path = models.ForeignKey(
         Path, on_delete=models.CASCADE, related_name="path_stations"

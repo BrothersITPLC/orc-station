@@ -1,8 +1,10 @@
 from django.db import models
 
+from base.models import BaseModel
+
 
 # Create your models here.
-class RegionOrCity(models.Model):
+class RegionOrCity(BaseModel):
     """
     Represents a region or city entity.
 
@@ -25,7 +27,7 @@ class RegionOrCity(models.Model):
             return self.name
 
 
-class ZoneOrSubcity(models.Model):
+class ZoneOrSubcity(BaseModel):
     """
     Represents a zone or sub-city entity within a region or city.
 
@@ -52,7 +54,7 @@ class ZoneOrSubcity(models.Model):
             return self.name
 
 
-class Woreda(models.Model):
+class Woreda(BaseModel):
     """
     Represents a woreda entity within a zone or sub-city.
 

@@ -31,16 +31,16 @@ class CentralAPIClient:
 
     def _get_headers(self):
         """Constructs the authorization headers."""
-        creds = self._get_credentials()
+        # creds = self._get_credentials()
         return {
-            "Authorization": f"Api-Key {creds.api_key}",
+            "Authorization": f"Api-Key 123",
             "Content-Type": "application/json",
         }
 
     def _get_url(self, endpoint):
         """Constructs the full URL for a given API endpoint."""
-        creds = self._get_credentials()
-        return f"{creds.base_url.rstrip('/')}/api/sync/{endpoint.lstrip('/')}"
+        # creds = self._get_credentials()
+        return f"{'http://host.docker.internal:8010'.rstrip('/')}/api/sync/{endpoint.lstrip('/')}"
 
     def get_pending_changes(self):
         """
