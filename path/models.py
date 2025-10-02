@@ -17,8 +17,6 @@ class Path(BaseModel):
     created_by = models.ForeignKey(
         "users.CustomUser", on_delete=models.RESTRICT, related_name="path_created_by"
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name

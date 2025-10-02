@@ -1,10 +1,11 @@
 from django.db import models
 from django.utils import timezone
 
+from base.models import BaseModel
 from users.models import CustomUser
 
 
-class AuditLog(models.Model):
+class AuditLog(BaseModel):
     ACTION_CHOICES = [
         ("create", "Create"),
         ("update", "Update"),

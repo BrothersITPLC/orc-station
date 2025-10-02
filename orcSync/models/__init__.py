@@ -1,1 +1,6 @@
-from .orc_sync import CentralServerCredential, LocalChangeLog
+from .orc_sync import (
+    CentralServerCredential,
+    LocalChangeLog,
+    ZoimeIntegrationConfig,
+    ZoimeUserSyncStatus,
+)

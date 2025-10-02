@@ -14,8 +14,6 @@ class Tax(BaseModel):
     commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE)
 
     percentage = models.DecimalField(max_digits=5, decimal_places=2)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
         "users.CustomUser", on_delete=models.PROTECT, related_name="taxes", null=True
     )

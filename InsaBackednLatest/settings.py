@@ -1,25 +1,21 @@
 import os
 from datetime import timedelta
-from pathlib import Path  # Ensure this import exists
+from pathlib import Path
 
+from celery.schedules import crontab
+from decouple import config
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
-# SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "False"
 DEBUG = True
 ROOT_URLCONF = "InsaBackednLatest.urls"
-# Internationalization
 LANGUAGE_CODE = "en-us"
 USE_I18N = True
-# Internationalization
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
@@ -180,6 +176,13 @@ SYNCHRONIZABLE_MODELS = [
     "users.UserStatus",
     "users.CustomUser",
     "users.Department",
+    "address.RegionOrCity",
+    "address.ZoneOrSubcity",
+    "address.Woreda",
+    "declaracions.Commodity",
+    "declaracions.PaymentMethod",
+    "declaracions.ManualPayment",
+    "auth.Group",
 ]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -188,28 +191,27 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # CRONJOBS = [("* * * * *", "orcSync.cron.run_sync", ">> /app/logs/cron.log 2>&1")]
 
 
-from celery.schedules import crontab
-from decouple import config
-
 # Redis as broker and backend
-CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = config(
-    "CELERY_RESULT_BACKEND", default="redis://localhost:6379/1"
-)
+# CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://localhost:6379/0")
+# CELERY_RESULT_BACKEND = config(
+#     "CELERY_RESULT_BACKEND", default="redis://localhost:6379/1"
+# )
 
-# Enable task acknowledgment and retries
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://redis:6379/0")
+CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default="redis://redis:6379/1")
+
+
 CELERY_TASK_ACKS_LATE = True
 CELERY_TASK_RETRY_POLICY = {
     "max_retries": 5,
-    "interval_start": 5,  # 5 seconds initial delay
-    "interval_step": 1,  # increase by 30s
-    "interval_max": 300,  # up to 5 minutes
+    "interval_start": 5,
+    "interval_step": 1,
+    "interval_max": 300,
 }
 
-# Periodic sync schedule
 CELERY_BEAT_SCHEDULE = {
     "sync-with-central": {
-        "task": "orcSync.tasks.run_sync_task",
-        "schedule": crontab(minute="*/1"),  # Every 5 minutes
+        "task": "orcSync.tasks.main_sync.run_sync_task",
+        "schedule": crontab(minute="*/1"),
     },
 }

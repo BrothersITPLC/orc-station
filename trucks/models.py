@@ -2,8 +2,10 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from base.models import BaseModel
 
-class TruckOwner(models.Model):
+
+class TruckOwner(BaseModel):
     """
     Represents the owner of a truck, including personal details and contact information.
     """
@@ -41,7 +43,7 @@ class TruckOwner(models.Model):
         ordering = ["last_name", "first_name"]
 
 
-class Truck(models.Model):
+class Truck(BaseModel):
     """
     Represents a truck, including details about its specifications, ownership, and status.
     """
@@ -100,13 +102,6 @@ class Truck(models.Model):
         upload_to="images/",
         null=True,
         help_text=_("Image of the truck_plate"),
-    )
-
-    created_at = models.DateTimeField(
-        auto_now_add=True, help_text=_("Timestamp when the record was created")
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True, help_text=_("Timestamp when the record was last updated")
     )
 
     def __str__(self):

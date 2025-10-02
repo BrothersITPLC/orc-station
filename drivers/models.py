@@ -33,9 +33,6 @@ class Driver(BaseModel):
         related_name="drivers",
         null=True,
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.first_name} {self.first_name} ({self.license_number})"

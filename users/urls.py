@@ -47,7 +47,7 @@ urlpatterns = [
     ),
     path("give_report", views.GiveReportIssueForEmployer.as_view(), name="give_report"),
     path(
-        "read_report/<int:user_id>", views.ReadReportIsue.as_view(), name="read_report"
+        "read_report/<uuid:user_id>", views.ReadReportIsue.as_view(), name="read_report"
     ),
 ]
 

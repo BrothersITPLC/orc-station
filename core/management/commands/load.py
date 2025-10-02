@@ -14,9 +14,7 @@ class Command(BaseCommand):
             "super.json",
             "department.json",
             "groups.json",
-            "regionorcity.json",
-            "zoneorsubcity.json",
-            "woreda.json",
+            "address.json",
             "workstation.json",
             "users.json",
             "commodity.json",
@@ -26,9 +24,6 @@ class Command(BaseCommand):
             "trucks.json",
             "driver.json",
             "exporter.json",
-            # "path.json",
-            # "declaracion.json",
-            # "checkin.json",
         ]
 
         for fixture in fixtures:

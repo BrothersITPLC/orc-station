@@ -108,7 +108,7 @@ urlpatterns = [
     path("api/", include("path.urls")),
     path("api/", include("news.urls")),
     path("api/", include("api.urls")),
-    path("sync/", include("orcSync.urls")),
+    path("api/", include("orcSync.urls")),
 ]
 
 # ✅ Add static + media only when DEBUG=True

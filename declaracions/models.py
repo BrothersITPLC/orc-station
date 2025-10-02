@@ -2,13 +2,13 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 
+from base.models import BaseModel
+
 
 # Create your models here.
-class Commodity(models.Model):
+class Commodity(BaseModel):
     name = models.CharField(max_length=400, unique=True)
     unit_price = models.PositiveBigIntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
         "users.CustomUser",
         on_delete=models.PROTECT,
@@ -20,7 +20,7 @@ class Commodity(models.Model):
         return self.name
 
 
-class Declaracion(models.Model):
+class Declaracion(BaseModel):
     STATUS_CHOICES = [
         ("PENDING", "Pending"),
         ("ON_GOING", "On Going"),
@@ -63,23 +63,18 @@ class Declaracion(models.Model):
         Commodity, on_delete=models.PROTECT, related_name="declaracions", null=True
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
     def __str__(self):
         return self.declaracio_number or "Unnamed Declaracion"
 
 
-class PaymentMethod(models.Model):
-    name = models.CharField(max_length=400, unique=True, primary_key=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+class PaymentMethod(BaseModel):
+    name = models.CharField(max_length=400, unique=True)
 
     def __str__(self):
         return self.name
 
 
-class Checkin(models.Model):
+class Checkin(BaseModel):
     STATUS_CHOICES = [
         ("pending", "Pending"),
         ("pass", "Pass"),
@@ -118,7 +113,6 @@ class Checkin(models.Model):
     employee = models.ForeignKey(
         "users.CustomUser", on_delete=models.PROTECT, related_name="checkins", null=True
     )
-    updated_at = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=100, choices=STATUS_CHOICES, default="unpaid")
     transaction_key = models.CharField(max_length=1000, null=True)
     payment_method = models.ForeignKey(
@@ -150,7 +144,7 @@ class Checkin(models.Model):
         ]
 
 
-class ManualPayment(models.Model):
+class ManualPayment(BaseModel):
     is_bank = models.BooleanField()
     bank_name = models.CharField(max_length=200, blank=True, null=False)
     payer_name = models.CharField(max_length=500, null=True, blank=True)
@@ -160,7 +154,7 @@ class ManualPayment(models.Model):
     )
 
 
-class ChangeTruck(models.Model):
+class ChangeTruck(BaseModel):
     declaracion = models.ForeignKey(
         "Declaracion",
         on_delete=models.PROTECT,

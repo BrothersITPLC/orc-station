@@ -1,12 +1,12 @@
 [
   {
     "model": "users.department",
-    "pk": 1,
+    "pk": "00000000-0000-0000-0000-000000000001",
     "fields": {
-      "name": "it",
-      "created_at": "2024-07-28T15:25:20.040Z",
       "updated_at": "2024-07-28T15:25:20.040Z",
-      "created_by": 1
+      "created_at": "2024-07-28T15:25:20.040Z",
+      "name": "it",
+      "created_by": "b8632d2b-afe1-40b4-8e14-4afd1cf240bc"
     }
   }
 ]

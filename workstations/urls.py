@@ -16,22 +16,22 @@ router.register(r"workedat", WorkedAtViewSet, basename="workedat")
 urlpatterns = [
     path("", include(router.urls)),
     path(
-        "workstationsbyemployee/<int:employee_id>/",
+        "workstationsbyemployee/<uuid:employee_id>/",
         WorkStationsByEmployee.as_view(),
         name="workstationsbyemployee",
     ),
     path(
-        "unemployeebyworkstation/<int:station_id>/",
+        "unemployeebyworkstation/<uuid:station_id>/",
         UnEmployeeByWorkStation.as_view(),
         name="unemployeebyworkstation",
     ),
     path(
-        "employeebyworkstation/<int:station_id>/",
+        "employeebyworkstation/<uuid:station_id>/",
         EmployeeByWorkStation.as_view(),
         name="employeebyworkstation",
     ),
     path(
-        "workedat/<int:station_id>/<int:employee_id>/",
+        "workedat/<uuid:station_id>/<uuid:employee_id>/",
         WorkedAtViewSet.as_view({"delete": "destroy"}),
         name="workedat-delete",
     ),

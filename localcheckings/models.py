@@ -24,7 +24,6 @@ class JourneyWithoutTruck(BaseModel):
         "path.Path", on_delete=models.RESTRICT, null=True, related_name="localJourneys"
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         "users.CustomUser",
         on_delete=models.RESTRICT,
@@ -34,4 +33,3 @@ class JourneyWithoutTruck(BaseModel):
     status = models.CharField(
         max_length=400, null=True, choices=STATUS_CHOICES, default="PENDING"
     )
-    updated_at = models.DateTimeField(auto_now=True)

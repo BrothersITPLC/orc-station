@@ -16,8 +16,6 @@ class RegionOrCity(BaseModel):
     """
 
     name = models.CharField(max_length=100, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
         "users.CustomUser", on_delete=models.RESTRICT, null=True
     )
@@ -43,8 +41,6 @@ class ZoneOrSubcity(BaseModel):
     region = models.ForeignKey(
         RegionOrCity, on_delete=models.CASCADE, related_name="zones"
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
         "users.CustomUser", on_delete=models.RESTRICT, null=True
     )
@@ -70,8 +66,6 @@ class Woreda(BaseModel):
     zone = models.ForeignKey(
         ZoneOrSubcity, on_delete=models.RESTRICT, related_name="woredas"
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
         "users.CustomUser", on_delete=models.RESTRICT, null=True, related_name="woredas"
     )
