@@ -24,9 +24,9 @@ COPY . /app/
 # Create log directory AFTER copying
 RUN mkdir -p /app/logs
 
-RUN chmod +x /app/start.sh
+RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8000
 
 # Set the command to our new script
-CMD ["sh", "/app/start.sh"]
+CMD ["sh", "/app/entrypoint.sh"]
