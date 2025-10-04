@@ -46,12 +46,11 @@ class UserViewSet(viewsets.ModelViewSet):
     ]
 
     def get_permissions(self):
-        # Set the required permission based on the action
         if self.action == "create":
             self.permission_required = "add_customuser"
         elif self.action == "list":
             self.permission_required = "view_customuser"
-        elif self.action == "update" or self.action == "partial_update":
+        elif self.action in ["update", "partial_update"]:
             self.permission_required = "change_customuser"
         elif self.action == "destroy":
             self.permission_required = "delete_customuser"
@@ -64,34 +63,38 @@ class UserViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(role__name=role_name)
         return queryset
 
+    def serialize_user(self, user, password=None):
+        """Helper to prepare user data for external API (UUID safe)."""
+        data = {
+            "id": str(user.id),
+            "role": str(user.role.id) if user.role else None,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email,
+            "username": user.username,
+        }
+        if password:
+            data["password"] = password
+        return data
+
     @transaction.atomic
     def update(self, request, *args, **kwargs):
-        print("is an updatses")
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
-        more_data = serializer = self.get_serializer(
-            instance, data=request.data, partial=partial
-        )
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        user_data = {
-            "id": instance.id,
-            "role": instance.role.id,
-            "first_name": instance.first_name,
-            "last_name": instance.last_name,
-            "email": instance.email,
-            "username": instance.username,
-            # Send the plain password to the external API
-        }
 
-        response = requests.post(
-            self.external_api_url, json=[user_data], headers=self.headers
-        )
+        # Prepare user data for external API
+        user_data = self.serialize_user(instance)
 
-        print(response, " here is the response")
-        response = requests.post(
-            self.external_api_url, json=[user_data], headers=self.headers
-        )
+        try:
+            response = requests.post(
+                self.external_api_url, json=[user_data], headers=self.headers
+            )
+            print(response, " here is the response")
+        except Exception as e:
+            print("External API call failed:", e)
 
         if getattr(instance, "_prefetched_objects_cache", None):
             instance._prefetched_objects_cache = {}
@@ -100,35 +103,26 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def perform_create(self, serializer):
-        # Step 1: Temporarily save the user without encrypting the password
         plain_password = serializer.validated_data["password"]
         user = serializer.save(password=plain_password)
 
-        # Step 2: Prepare data to send to the external API
-        user_data = {
-            "id": user.id,
-            "role": user.role.id if user.role else None,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "username": user.username,
-            "password": plain_password,  # Send the plain password to the external API
-        }
+        # Prepare user data for external API
+        user_data = self.serialize_user(user, plain_password)
 
-        # response = requests.post(
-        #     self.external_api_url, json=[user_data], headers=self.headers
-        # )
-        # print(response, "this is response")
-        # Step 4: Encrypt the password locally after sending it to the external API
-        user.set_password(plain_password)  # Encrypt the password
-        user.save()  # Save the encrypted password in the database
+        # Uncomment if external API must be called
+        # try:
+        #     response = requests.post(
+        #         self.external_api_url, json=[user_data], headers=self.headers
+        #     )
+        #     print(response, "this is response")
+        # except Exception as e:
+        #     print("External API call failed:", e)
 
-        # Handle the external API response if it fails
-        # if response.status_code != 201:
-        #     print(f"Failed to forward user data: {response.json()}")
+        # Encrypt password locally after sending to external API
+        user.set_password(plain_password)
+        user.save()
 
     def create(self, request, *args, **kwargs):
-        """Override create to customize the response."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -152,9 +146,6 @@ class ChangePasswordView(APIView):
                 )
             user.set_password(serializer.validated_data["new_password"])
             user.save()
-            # update_session_auth_hash(
-            #     request, user
-            # )  # Important to keep the user logged in after password change
             return Response(
                 {"detail": "Password has been changed successfully."},
                 status=status.HTTP_200_OK,
@@ -163,9 +154,8 @@ class ChangePasswordView(APIView):
 
 
 class UserProfileViewSet(viewsets.ViewSet):
-
     def profile(self, request):
-        user = request.user  # Get the logged-in user
+        user = request.user
         serializer = UserSerializer(user)
         return Response(serializer.data)
 
@@ -175,8 +165,6 @@ class UserProfileViewSet(viewsets.ViewSet):
         if serializer.is_valid():
             serializer.save()
             response = serializer.data
-            user = request.user
-            print("here is the user who is running know: ", user)
             if user.current_station:
                 response.update(
                     {
@@ -187,13 +175,8 @@ class UserProfileViewSet(viewsets.ViewSet):
                 )
             else:
                 response.update({"current_station": None})
-            if user.role:
 
-                response.update({"role": user.role.name})
-
-            else:
-                response.update({"role": None})
-
+            response.update({"role": user.role.name if user.role else None})
             return Response(response)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -204,7 +187,6 @@ class AssignWorkStation(APIView):
     def post(self, request, format=None):
         user_id = request.data.get("user_id")
         workstation_id = request.data.get("workstation_id")
-        print(user_id, workstation_id, self.request.user.id)
         try:
             with transaction.atomic():
                 user = CustomUser.objects.get(id=user_id)
@@ -239,7 +221,6 @@ class AssignWorkStation(APIView):
             user = CustomUser.objects.get(id=user_id)
 
             with transaction.atomic():
-
                 station = (
                     WorkedAt.objects.filter(employee=user)
                     .order_by("-created_at")
@@ -247,9 +228,9 @@ class AssignWorkStation(APIView):
                 )
 
                 if station and station.station.id == user.current_station.id:
-
                     station.leave_time = timezone.now()
                     station.save()
+
                 user.current_station = None
                 user.save()
 
@@ -260,5 +241,4 @@ class AssignWorkStation(APIView):
 
 def custom_404_view(request, exception):
     response_data = {"error": "The requested resource was not found."}
-    print("respons")
     return JsonResponse(response_data, status=404)

@@ -1,6 +1,11 @@
 #!/bin/sh
-echo "Starting cron daemon..."
-cron
+set -e
 
-echo "Starting Django runserver..."
-exec python manage.py runserver 0.0.0.0:8000
+echo "Running migrations..."
+python manage.py migrate --noinput
+
+echo "Collecting static files..."
+python manage.py collectstatic --noinput
+
+echo "Starting Gunicorn..."
+exec gunicorn InsaBackednLatest.wsgi:application --bind 0.0.0.0:8000

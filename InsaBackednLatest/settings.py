@@ -215,3 +215,29 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute="*/1"),
     },
 }
+
+
+SYNCHRONIZABLE_MODELS = [
+    "drivers.Driver",
+    "workstations.WorkStation",
+    "workstations.WorkedAt",
+    "trucks.TruckOwner",
+    "trucks.Truck",
+    "exporters.TaxPayerType",
+    "exporters.Exporter",
+    "tax.Tax",
+    "users.Report",
+    "users.UserStatus",
+    "users.CustomUser",
+    "users.Department",
+    "address.RegionOrCity",
+    "address.ZoneOrSubcity",
+    "address.Woreda",
+    "declaracions.Commodity",
+    "declaracions.PaymentMethod",
+    "declaracions.ManualPayment",
+    "auth.Group",
+]
+
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
