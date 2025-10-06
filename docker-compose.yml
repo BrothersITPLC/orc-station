@@ -16,7 +16,7 @@ services:
     container_name: dengego_redis
     command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
     ports:
-      - "6379:6379"
+      - "6378:6379"
     volumes:
       - redis_data:/data
     networks:
