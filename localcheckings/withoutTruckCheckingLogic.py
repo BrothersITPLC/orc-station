@@ -45,12 +45,12 @@ class WithoutTruckCheckinLogic(APIView):
             self.permission_required = "delete_checkin"
         return [permission() for permission in self.permission_classes]
 
-    def get(self, request, unique_id):
+    def get(self, request, phone_number):
 
         user = self.request.user
 
         try:
-            exporter = Exporter.objects.filter(unique_id=unique_id).first()
+            exporter = Exporter.objects.filter(phone_number=phone_number).first()
 
             if not exporter:
                 return Response(
