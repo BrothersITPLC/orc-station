@@ -61,6 +61,8 @@ class Exporter(BaseModel):
         null=True,
     )
 
+    phone_number = models.CharField(max_length=15, unique=True)
+
     tin_number = models.CharField(max_length=400, null=True, blank=True, unique=True)
     register_place = models.ForeignKey(
         "workstations.WorkStation",

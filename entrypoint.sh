@@ -1,11 +1,19 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
-echo "Running migrations..."
-python manage.py migrate --noinput
+echo "🚀 Waiting for database..."
+until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" > /dev/null 2>&1; do
+  echo "Database not ready, retrying in 3s..."
+  sleep 3
+done
+echo "✅ Database ready"
 
-echo "Collecting static files..."
-python manage.py collectstatic --noinput
+echo "🧩 Applying migrations..."
+python manage.py makemigrations --noinput || true
+python manage.py migrate --noinput || true
 
-echo "Starting Gunicorn..."
+echo "📦 Collecting static files..."
+python manage.py collectstatic --noinput || true
+
+echo "🎯 Starting Gunicorn server..."
 exec gunicorn InsaBackednLatest.wsgi:application --bind 0.0.0.0:8000

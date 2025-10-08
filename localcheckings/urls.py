@@ -26,7 +26,7 @@ urlpatterns = [
         name="update_without_truck_journey",
     ),
     path(
-        "without-truck-checking-logic/<unique_id>",
+        "without-truck-checking-logic/<phone_number>",
         WithoutTruckCheckinLogic.as_view(),
         name="without_truck_checkin_logic",
     ),

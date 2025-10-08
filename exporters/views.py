@@ -23,6 +23,7 @@ class ExporterViewSet(viewsets.ModelViewSet):
         "middle_name",
         "tin_number",
         "unique_id",
+        "phone_number",
     ]
     permission_required = "view_exporter"
     pagination_class = CustomLimitOffsetPagination
