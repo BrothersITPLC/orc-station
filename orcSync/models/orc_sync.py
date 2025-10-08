@@ -148,6 +148,12 @@ class ZoimeUserSyncStatus(BaseModel):
     Does not modify the CustomUser model directly.
     """
 
+    zoime_incremental_id = models.AutoField(
+        unique=True,
+        db_index=True,
+        editable=False,
+        help_text="An incremental integer ID for mapping to the Zoime system.",
+    )
     user = models.OneToOneField(
         "users.CustomUser",
         on_delete=models.CASCADE,

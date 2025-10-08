@@ -40,7 +40,8 @@ class TruckSerializer(serializers.ModelSerializer):
         model = Truck
         fields = "__all__"
         """[
-            "owner","truck_id",
+            "owner",
+            "truck_id",
             "plate_number",
             "truck_brand",
             "country_of_origin",
