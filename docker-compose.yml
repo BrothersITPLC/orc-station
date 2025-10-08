@@ -40,10 +40,6 @@ services:
     networks:
       - dengego_orc_net
     restart: always
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --noinput &&
-             gunicorn InsaBackednLatest.wsgi:application --bind 0.0.0.0:8000"
   celery_worker:
     build: .
     container_name: dengego_celery_worker

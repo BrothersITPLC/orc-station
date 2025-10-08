@@ -9,12 +9,11 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from analysis.views.helpers import hourly_data as hour_data
+from analysis.views.helpers import monthly_data as month_data
+from analysis.views.helpers import weekly_data as week_data
 from declaracions.models import Checkin
 from exporters.models import Exporter
-
-from ..date_info import hourly_data as hour_data
-from ..date_info import monthly_data as month_data
-from ..date_info import weekly_data as week_data
 
 
 def calculate_amount_year(

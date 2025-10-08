@@ -12,7 +12,7 @@ from workstations.models import WorkStation
 
 
 @api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([permissions.AllowAny])
 def stationTaxpayer_revenue_report(request):
     start_date = parse_date(request.query_params.get("start_date"))
     end_date = parse_date(request.query_params.get("end_date"))
