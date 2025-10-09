@@ -14,6 +14,7 @@ router.register(
     WithoutTruckJourneyViewset,
     basename="journey_without_truck",
 )
+
 urlpatterns = [
     path(
         "without-truck-checkin",

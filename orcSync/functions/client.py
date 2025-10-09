@@ -32,6 +32,7 @@ class CentralAPIClient:
     def _get_headers(self):
         """Constructs the authorization headers."""
         creds = self._get_credentials()
+        print(f"the centeral api-key{creds.api_key}")
         return {
             "Authorization": f"Api-Key {creds.api_key}",
             "Content-Type": "application/json",

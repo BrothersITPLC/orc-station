@@ -3,7 +3,7 @@ import base64
 import requests
 from django.apps import apps
 from django.core.files.base import ContentFile
-from django.db import models, transaction
+from django.db import IntegrityError, models, transaction
 from django.db.models import F, Q
 from django.db.models.signals import post_save, pre_delete
 
