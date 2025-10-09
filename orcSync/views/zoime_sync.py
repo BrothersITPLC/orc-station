@@ -95,20 +95,15 @@ class ZoimeUserSyncTriggerView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    # Helper function to generate a strong random password
     def _generate_strong_password(self, length=12):
         characters = string.ascii_letters + string.digits
-        # Ensure at least one uppercase, one lowercase, one digit, one symbol
         password = [
             secrets.choice(string.ascii_uppercase),
             secrets.choice(string.ascii_lowercase),
             secrets.choice(string.digits),
         ]
-        # Fill the rest of the password length with random characters
         password += [secrets.choice(characters) for _ in range(length - 4)]
-        secrets.SystemRandom().shuffle(
-            password
-        )  # Shuffle to randomize character positions
+        secrets.SystemRandom().shuffle(password)
         return "".join(password)
 
     def post(self, request, pk, *args, **kwargs):
@@ -131,35 +126,23 @@ class ZoimeUserSyncTriggerView(APIView):
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        # Get or create ZoimeUserSyncStatus for the user
         sync_status, created = ZoimeUserSyncStatus.objects.get_or_create(user=user)
 
-        # As per requirement: "sync newly created users not updated"
-        # This implies we only sync once successfully.
-        if (
-            sync_status.last_synced_at and not created
-        ):  # Changed from 'not created' to check actual sync status
+        if sync_status.last_synced_at and not created:
             return Response(
                 {"detail": "User already successfully synced to Zoime API."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # --- NEW LOGIC: GENERATE AND SAVE PASSWORD IF NOT ALREADY SET ---
         if not sync_status.zoime_password:
             generated_password = self._generate_strong_password()
             sync_status.zoime_password = generated_password
-            sync_status.save()  # Save the generated password immediately
+            sync_status.save()
 
-            # IMPORTANT: For real-world systems, you'd want to securely communicate
-            # this generated password to the user or an administrator.
-            # Storing it in plaintext AND not telling anyone makes it a 'dark password'.
-            # For this prompt, we're explicitly asked to save as plaintext.
             print(
                 f"ZOIME_SYNC: Generated and saved password for {user.username}: {generated_password}"
             )
-        # --- END NEW LOGIC ---
 
-        # Try to get the Zoime API client
         try:
             client = ZoimeAPIClient()
         except ImproperlyConfigured as e:
@@ -179,18 +162,16 @@ class ZoimeUserSyncTriggerView(APIView):
             )
 
         try:
-            # The ZoimeUserSerializer will now correctly pick up the generated (or existing) password
             serializer = ZoimeUserSerializer(user)
             zoime_user_data = serializer.data
 
-            # Zoime API expects a list of users, even for a single user
             success, response_data = client.post_user([zoime_user_data])
 
             with transaction.atomic():
                 sync_status.sync_attempted_at = timezone.now()
                 if success:
                     sync_status.last_synced_at = timezone.now()
-                    sync_status.last_error = None  # Clear any previous errors
+                    sync_status.last_error = None
                     sync_status.save()
                     return Response(
                         {
@@ -200,7 +181,6 @@ class ZoimeUserSyncTriggerView(APIView):
                         status=status.HTTP_200_OK,
                     )
                 else:
-                    # Store the error response from Zoime API
                     sync_status.last_error = (
                         json.dumps(response_data)
                         if isinstance(response_data, dict)
@@ -215,8 +195,6 @@ class ZoimeUserSyncTriggerView(APIView):
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
         except serializers.ValidationError as e:
-            # Catch validation errors from ZoimeUserSerializer (e.g., missing zoime_password - though this should now be handled)
-            # If the password generation failed for some reason, this might still trigger.
             sync_status.sync_attempted_at = timezone.now()
             sync_status.last_error = str(e.detail)
             sync_status.save()
@@ -225,7 +203,6 @@ class ZoimeUserSyncTriggerView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except Exception as e:
-            # Catch any other unexpected errors during the sync process
             sync_status.sync_attempted_at = timezone.now()
             sync_status.last_error = str(e)
             sync_status.save()

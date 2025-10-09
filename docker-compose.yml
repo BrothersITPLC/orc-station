@@ -40,10 +40,6 @@ services:
     networks:
       - dengego_orc_net
     restart: always
-    # command: >
-    #   sh -c "python manage.py migrate &&
-    #          python manage.py collectstatic --noinput &&
-    #          gunicorn InsaBackednLatest.wsgi:application --bind 0.0.0.0:8000"
   celery_worker:
     build: .
     container_name: dengego_celery_worker
@@ -64,7 +60,16 @@ services:
     container_name: dengego_celery_beat
     env_file:
       - .env
-    command: sh scripts/start_beat.sh
+    command: >
+      sh -c "
+      echo 'Waiting for database to be ready...' &&
+      until python manage.py migrate --check > /dev/null 2>&1; do
+        echo 'Database not ready or migrations not applied, retrying in 5s...' &&
+        sleep 5;
+      done &&
+      echo 'Starting Celery Beat...' &&
+      celery -A InsaBackednLatest beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+      "
     depends_on:
       - redis
       - insadb

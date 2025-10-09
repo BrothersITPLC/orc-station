@@ -12,6 +12,7 @@ class ZoimeUserSerializer(serializers.ModelSerializer):
 
     role = serializers.SerializerMethodField()
     password = serializers.SerializerMethodField()
+    id = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
@@ -20,10 +21,20 @@ class ZoimeUserSerializer(serializers.ModelSerializer):
             "role",
             "first_name",
             "last_name",
+            "zoime_id",
             "email",
             "username",
             "password",
         ]
+
+    def get_id(self, obj):
+        try:
+            sync_status = ZoimeUserSyncStatus.objects.get(user=obj)
+            return sync_status.zoime_incremental_id
+        except ZoimeUserSyncStatus.DoesNotExist:
+            raise serializers.ValidationError(
+                f"No Zoime sync status found for user {obj.username}."
+            )
 
     def get_role(self, obj):
         """
