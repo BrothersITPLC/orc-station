@@ -1,4 +1,5 @@
 import base64
+import logging
 
 import requests
 from django.apps import apps
@@ -6,10 +7,13 @@ from django.core.files.base import ContentFile
 from django.db import IntegrityError, models, transaction
 from django.db.models import F, Q
 from django.db.models.signals import post_save, pre_delete
+from django.utils.dateparse import parse_datetime
 
 from orcSync.models import LocalChangeLog
 
 from .client import CentralAPIClient
+
+logger = logging.getLogger(__name__)
 
 MAX_RETRIES = 5
 
@@ -116,6 +120,10 @@ MAX_RETRIES = 5
 #             applied_event_ids_batch = []
 
 
+def loging_function(name):
+    logger.warning(name)
+
+
 def _apply_server_changes(changes, api_client):
     applied_event_ids_batch = []
     batch_size = 10
@@ -157,27 +165,80 @@ def _apply_server_changes(changes, api_client):
                             data_fields[field_name] = value
 
                     try:
+                        print("➡️ before atomic")
+
                         # Try normal update_or_create by PK
                         instance, created = Model.objects.update_or_create(
                             pk=object_id, defaults=data_fields
                         )
-                    except IntegrityError:
-                        # Conflict: find the instance using unique fields
-                        unique_fields = [
-                            f.name
-                            for f in Model._meta.fields
-                            if f.unique and f.name in data_fields
-                        ]
-                        filter_kwargs = {f: data_fields[f] for f in unique_fields}
-                        existing_instance = Model.objects.filter(
-                            **filter_kwargs
-                        ).first()
+                        print("➡️ after atomic")
+
+                    except IntegrityError as e:
+                        print("⚠️ IntegrityError detected:", e, flush=True)
+
+                        # Try to extract the offending field name from the error message
+                        error_msg = str(e)
+                        unique_field = None
+
+                        # For PostgreSQL: messages often look like:
+                        # 'duplicate key value violates unique constraint "app_model_field_key"\nDETAIL:  Key (field_name)=(value) already exists.'
+                        if "Key (" in error_msg:
+                            try:
+                                unique_field = error_msg.split("Key (")[1].split(")=")[
+                                    0
+                                ]
+                                print(
+                                    f"🔥 Unique conflict on field: {unique_field}",
+                                    flush=True,
+                                )
+                            except Exception:
+                                pass
+
+                        if not unique_field:
+                            # fallback if the error message doesn’t include field info
+                            print(
+                                "Could not determine which unique field caused IntegrityError",
+                                flush=True,
+                            )
+                            raise
+
+                        # Now use that field to find the conflicting instance
+                        if unique_field in data_fields:
+                            filter_kwargs = {unique_field: data_fields[unique_field]}
+                            print(f"🔍 Filtering using {filter_kwargs}", flush=True)
+                            existing_instance = Model.objects.filter(
+                                **filter_kwargs
+                            ).first()
+                        else:
+                            print(
+                                f"⚠️ Field '{unique_field}' not in payload, re-raising IntegrityError",
+                                flush=True,
+                            )
+                            raise
+
                         if existing_instance:
-                            # Compare incoming vs existing (optional: by updated_at)
+                            print(
+                                f"✅ Found existing instance: {existing_instance}",
+                                flush=True,
+                            )
+
+                            # Update logic — keep your same update approach
                             if "updated_at" in data_fields:
-                                incoming_updated = data_fields["updated_at"]
+                                incoming_updated = data_fields.get(
+                                    "updated_at"
+                                ) or data_fields.get("created_at")
+
+                                # Convert string to datetime if necessary
+                                if isinstance(incoming_updated, str):
+                                    parsed = parse_datetime(incoming_updated)
+                                    if parsed:
+                                        incoming_updated = parsed
+
                                 existing_updated = getattr(
                                     existing_instance, "updated_at", None
+                                )
+                                print(
+                                    f"📅 Incoming updated_at: {incoming_updated}, existing updated_at: {existing_updated}",
                                 )
                                 if (
                                     not existing_updated
@@ -186,16 +247,24 @@ def _apply_server_changes(changes, api_client):
                                     for key, val in data_fields.items():
                                         setattr(existing_instance, key, val)
                                     existing_instance.save()
-                                instance = existing_instance
                             else:
-                                # Just apply fields as they are
                                 for key, val in data_fields.items():
                                     setattr(existing_instance, key, val)
                                 existing_instance.save()
-                                instance = existing_instance
+
+                            instance = existing_instance
                         else:
-                            # If no existing instance, re-raise the error
+                            print(
+                                "❌ No existing instance found — re-raising IntegrityError",
+                                flush=True,
+                            )
                             raise
+
+                    except Exception as e:
+                        print(
+                            f"SYNC ERROR: Failed to apply change {change['id']}: {e}. Skipping. ******************************** PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP"
+                        )
+                        continue
 
                     # Handle file fields
                     for field_name, url in file_urls.items():
@@ -223,8 +292,11 @@ def _apply_server_changes(changes, api_client):
             print(
                 f"SYNC WARNING: Model {model_label} not found locally. Skipping change."
             )
+
         except Exception as e:
-            print(f"SYNC ERROR: Failed applying change {change['id']}: {e}. Skipping.")
+            print(
+                f"SYNC ERROR: Failed applying change {change['id']}: {e}. Skipping.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            )
         finally:
             post_save.connect(
                 handle_save, sender=Model, dispatch_uid=f"sync_save_{Model._meta.label}"

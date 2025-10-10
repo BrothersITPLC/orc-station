@@ -142,7 +142,7 @@ class ZoimeIntegrationConfig(BaseModel):
         return super().save(*args, **kwargs)
 
 
-class ZoimeUserSyncStatus(BaseModel):
+class ZoimeUserSyncStatus(models.Model):
     """
     Tracks the synchronization status of a CustomUser with the Zoime API.
     Does not modify the CustomUser model directly.
@@ -152,6 +152,7 @@ class ZoimeUserSyncStatus(BaseModel):
         unique=True,
         db_index=True,
         editable=False,
+        primary_key=True,
         help_text="An incremental integer ID for mapping to the Zoime system.",
     )
     user = models.OneToOneField(
