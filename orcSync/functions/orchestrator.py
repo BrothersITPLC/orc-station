@@ -209,6 +209,11 @@ def _apply_server_changes(changes, api_client):
                             existing_instance = Model.objects.filter(
                                 **filter_kwargs
                             ).first()
+
+                            print(
+                                f"🔍 Existing instance: {existing_instance}",
+                                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+                            )
                         else:
                             print(
                                 f"⚠️ Field '{unique_field}' not in payload, re-raising IntegrityError",
@@ -245,11 +250,14 @@ def _apply_server_changes(changes, api_client):
                                     or incoming_updated > existing_updated
                                 ):
                                     for key, val in data_fields.items():
+                                        if key == "id":
+                                            continue
                                         setattr(existing_instance, key, val)
                                     existing_instance.save()
                             else:
                                 for key, val in data_fields.items():
                                     setattr(existing_instance, key, val)
+
                                 existing_instance.save()
 
                             instance = existing_instance
