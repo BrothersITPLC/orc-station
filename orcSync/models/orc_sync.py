@@ -142,7 +142,7 @@ class ZoimeIntegrationConfig(BaseModel):
         return super().save(*args, **kwargs)
 
 
-class ZoimeUserSyncStatus(BaseModel):
+class ZoimeUserSyncStatus(models.Model):
     """
     Tracks the synchronization status of a CustomUser with the Zoime API.
     Does not modify the CustomUser model directly.

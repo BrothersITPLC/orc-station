@@ -6,6 +6,7 @@ from decimal import ROUND_HALF_UP, Decimal
 
 import requests
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.db import transaction
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -15,6 +16,7 @@ from rest_framework.views import APIView
 
 from declaracions.models import Checkin, Declaracion, PaymentMethod
 from localcheckings.models import JourneyWithoutTruck
+from orcSync.models import CentralServerCredential
 from path.models import Path, PathStation
 
 
@@ -27,6 +29,40 @@ def generate_short_uuid():
 class DerashPay(APIView):
     permission_classes = [AllowAny]
 
+    _credentials = None
+
+    def _get_credentials(self):
+        """
+        Fetches and caches the central server credentials.
+        Raises an error if credentials are not configured.
+        """
+        if self._credentials is None:
+            try:
+                self._credentials = CentralServerCredential.objects.first()
+                if self._credentials is None:
+                    raise CentralServerCredential.DoesNotExist
+            except CentralServerCredential.DoesNotExist:
+                raise ImproperlyConfigured(
+                    "Central Server Credentials are not configured. "
+                    "Please create a CentralServerCredential entry in the admin."
+                )
+        return self._credentials
+
+    def _get_headers(self):
+        """Constructs the authorization headers."""
+        creds = self._get_credentials()
+        print(f"the centeral api-key{creds.api_key}")
+        return {
+            "Authorization": f"Api-Key {creds.api_key}",
+            "Content-Type": "application/json",
+        }
+
+    def _get_url(self):
+        """Constructs the full URL for a given API endpoint."""
+        creds = self._get_credentials()
+        print(f"the centeral api-key{creds.api_key}")
+        return f"{creds.base_url.rstrip('/')}/api/payWithDerash"
+
     def post(self, request):
         try:
             data = request.data
@@ -37,110 +73,167 @@ class DerashPay(APIView):
             bill_id = generate_short_uuid()
             checkin_id = data.get("id")
             user = self.request.user
-            print(bill_id)
-            headers = {
-                "Content-Type": "application/json",
-                "api-key": os.getenv(
-                    "DERASH_API_KEY"
-                ),  # Ensure this environment variable is set
-                "api-secret": os.getenv(
-                    "DERASH_SECRET_KEY"
-                ),  # Ensure this environment variable is set
+            incoming_cookies = request.COOKIES  # a dict-like object
+
+            print(bill_id, " ,data ", user.id)
+
+            url = self._get_url()
+
+            payment_data = {
+                "bill_id": bill_id,
+                "reason": reason,
+                "name": name,
+                "mobile": mobile,
+                "email": email,
+                "user": str(user.id),  # user.id,
+                "checkin_id": checkin_id,
             }
+            headers = self._get_headers()
+            response = requests.post(
+                url,
+                cookies=incoming_cookies,
+                json=payment_data,
+                headers=self._get_headers(),
+                timeout=30,
+            )
+            response.raise_for_status()
+            response_data = response.json()["data"]
 
-            with transaction.atomic():
-                try:
-                    checkin = Checkin.objects.get(id=checkin_id)
+            # checkin = Checkin.objects.get(id=checkin_id)
 
-                    previous_checkin = (
-                        Checkin.objects.filter(declaracion=checkin.declaracion)
-                        .exclude(checkin_time__gte=checkin.checkin_time)
-                        .order_by("-checkin_time")
-                        .first()
-                    )
-                    print("this is price:", checkin.unit_price)
-                    weight = checkin.net_weight
-                    if previous_checkin:
-                        weight = max(
-                            0, checkin.net_weight - previous_checkin.net_weight
-                        )
-                    print("Previous Checkin weight calculation:", weight)
-                    amount = (
-                        Decimal(weight)
-                        * Decimal(checkin.unit_price)
-                        / 100
-                        * Decimal(checkin.rate)
-                        / 100
-                    )
-                    print("Calculated amount:", amount)
-                    amount = (
-                        amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                        - checkin.deduction
-                    )
-                    print("rounded Amount is: ", amount)
-                    payment_data = {
-                        "bill_id": bill_id,
-                        "reason": reason,
-                        "amount_due": float(
-                            amount
-                        ),  # Assuming a static amount due for demonstration
-                        "due_date": datetime.now().isoformat(),
-                        "name": name,
-                        "mobile": mobile,
-                        "email": email,
-                    }
+            # if checkin.declaracion and checkin.declaracion.id:
 
-                    response = requests.post(
-                        f'{os.getenv("DERASH_END_POINT")}/biller/customer-bill-data',
-                        json=payment_data,
-                        headers=headers,
-                        timeout=15,
-                    )
-                    response.raise_for_status()
-                    response_data = response.json()
-                    print("Response data from Derash API:", response_data)
+            #     decl = Declaracion.objects.filter(id=checkin.declaracion.id).first()
+            #     if decl:
+            #         path_stations = PathStation.objects.filter(path=decl.path)
+            #         end_station = path_stations.order_by("order").last().station
 
-                    method = PaymentMethod.objects.filter(name="derash").first()
-                    if method is None:
-                        raise ValidationError(
-                            "No Derash Payment  please Add this payment Method"
-                        )
-                    if checkin.declaracion and checkin.declaracion.id:
+            #         if decl and end_station.id == checkin.station.id:
+            #             decl.status = "COMPLETED"
+            #             decl.save()
+            # else:
+            #     localJourney = JourneyWithoutTruck.objects.filter(
+            #         id=checkin.localJourney.id
+            #     ).first()
+            #     path_stations = PathStation.objects.filter(path=localJourney.path)
+            #     end_station = path_stations.order_by("order").last().station
+            #     if localJourney and end_station.id == checkin.station.id:
+            #         localJourney.status = "COMPLETED"
+            #         localJourney.save()
+            #     method = PaymentMethod.objects.filter(name="derash").first()
+            #     checkin.transaction_key = bill_id
+            #     checkin.status = "success"
+            #     checkin.payment_accepter = user
+            #     checkin.payment_method = method
+            #     checkin.confirmation_code = response_data["confirmation_code"]
+            #     checkin.save()
 
-                        decl = Declaracion.objects.filter(
-                            id=checkin.declaracion.id
-                        ).first()
-                        if decl:
-                            path_stations = PathStation.objects.filter(path=decl.path)
-                            end_station = path_stations.order_by("order").last().station
+            return Response({"data": response_data}, status=status.HTTP_200_OK)
 
-                            if decl and end_station.id == checkin.station.id:
-                                decl.status = "COMPLETED"
-                                decl.save()
-                    else:
-                        localJourney = JourneyWithoutTruck.objects.filter(
-                            id=checkin.localJourney.id
-                        ).first()
-                        path_stations = PathStation.objects.filter(
-                            path=localJourney.path
-                        )
-                        end_station = path_stations.order_by("order").last().station
-                        if localJourney and end_station.id == checkin.station.id:
-                            localJourney.status = "COMPLETED"
-                            localJourney.save()
+            # headers = {
+            #     "Content-Type": "application/json",
+            #     "api-key": os.getenv(
+            #         "DERASH_API_KEY"
+            #     ),  # Ensure this environment variable is set
+            #     "api-secret": os.getenv(
+            #         "DERASH_SECRET_KEY"
+            #     ),  # Ensure this environment variable is set
+            # }
 
-                    checkin.transaction_key = bill_id
-                    checkin.status = "success"
-                    checkin.payment_accepter = user
-                    checkin.payment_method = method
-                    checkin.confirmation_code = response_data["confirmation_code"]
-                    checkin.save()
+            # with transaction.atomic():
+            #     try:
+            #         checkin = Checkin.objects.get(id=checkin_id)
 
-                    return Response({"data": response_data}, status=status.HTTP_200_OK)
-                except requests.RequestException as req_err:
-                    print(f"Request error occurred: {req_err}")
-                    # Rethrow exception to ensure transaction rollback
-                    raise
+            #         previous_checkin = (
+            #             Checkin.objects.filter(declaracion=checkin.declaracion)
+            #             .exclude(checkin_time__gte=checkin.checkin_time)
+            #             .order_by("-checkin_time")
+            #             .first()
+            #         )
+            #         print("this is price:", checkin.unit_price)
+            #         weight = checkin.net_weight
+            #         if previous_checkin:
+            #             weight = max(
+            #                 0, checkin.net_weight - previous_checkin.net_weight
+            #             )
+            #         print("Previous Checkin weight calculation:", weight)
+            #         amount = (
+            #             Decimal(weight)
+            #             * Decimal(checkin.unit_price)
+            #             / 100
+            #             * Decimal(checkin.rate)
+            #             / 100
+            #         )
+            #         print("Calculated amount:", amount)
+            #         amount = (
+            #             amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            #             - checkin.deduction
+            #         )
+            #         print("rounded Amount is: ", amount)
+            #         payment_data = {
+            #             "bill_id": bill_id,
+            #             "reason": reason,
+            #             "amount_due": float(
+            #                 amount
+            #             ),  # Assuming a static amount due for demonstration
+            #             "due_date": datetime.now().isoformat(),
+            #             "name": name,
+            #             "mobile": mobile,
+            #             "email": email,
+            #         }
+
+            #         response = requests.post(
+            #             f'{os.getenv("DERASH_END_POINT")}/biller/customer-bill-data',
+            #             json=payment_data,
+            #             headers=headers,
+            #             timeout=15,
+            #         )
+            #         response.raise_for_status()
+            #         response_data = response.json()
+            #         print("Response data from Derash API:", response_data)
+
+            #         method = PaymentMethod.objects.filter(name="derash").first()
+            #         if method is None:
+            #             raise ValidationError(
+            #                 "No Derash Payment  please Add this payment Method"
+            #             )
+            #         if checkin.declaracion and checkin.declaracion.id:
+
+            #             decl = Declaracion.objects.filter(
+            #                 id=checkin.declaracion.id
+            #             ).first()
+            #             if decl:
+            #                 path_stations = PathStation.objects.filter(path=decl.path)
+            #                 end_station = path_stations.order_by("order").last().station
+
+            #                 if decl and end_station.id == checkin.station.id:
+            #                     decl.status = "COMPLETED"
+            #                     decl.save()
+            #         else:
+            #             localJourney = JourneyWithoutTruck.objects.filter(
+            #                 id=checkin.localJourney.id
+            #             ).first()
+            #             path_stations = PathStation.objects.filter(
+            #                 path=localJourney.path
+            #             )
+            #             end_station = path_stations.order_by("order").last().station
+            #             if localJourney and end_station.id == checkin.station.id:
+            #                 localJourney.status = "COMPLETED"
+            #                 localJourney.save()
+
+            #         checkin.transaction_key = bill_id
+            #         checkin.status = "success"
+            #         checkin.payment_accepter = user
+            #         checkin.payment_method = method
+            #         checkin.confirmation_code = response_data["confirmation_code"]
+            #         checkin.save()
+
+            #         return Response({"data": response_data}, status=status.HTTP_200_OK)
+            #     except requests.RequestException as req_err:
+            #         print(f"Request error occurred: {req_err}")
+            #         # Rethrow exception to ensure transaction rollback
+            #         raise
+
         except Exception as e:
             print(e)
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

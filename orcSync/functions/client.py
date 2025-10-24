@@ -32,6 +32,7 @@ class CentralAPIClient:
     def _get_headers(self):
         """Constructs the authorization headers."""
         creds = self._get_credentials()
+        print(f"the centeral api-key{creds.api_key}")
         return {
             "Authorization": f"Api-Key {creds.api_key}",
             "Content-Type": "application/json",
@@ -40,6 +41,7 @@ class CentralAPIClient:
     def _get_url(self, endpoint):
         """Constructs the full URL for a given API endpoint."""
         creds = self._get_credentials()
+        print(f"the centeral api-key{creds.api_key}")
         return f"{creds.base_url.rstrip('/')}/api/sync/{endpoint.lstrip('/')}"
 
     def get_pending_changes(self):
