@@ -1,4 +1,5 @@
 import json
+import logging
 import secrets
 import string
 
@@ -15,6 +16,8 @@ from orcSync.functions.zoime_client import ZoimeAPIClient
 from orcSync.models import ZoimeIntegrationConfig, ZoimeUserSyncStatus
 from orcSync.serializers.zoime_user import ZoimeUserSerializer
 from users.models import CustomUser
+
+logger = logging.getLogger(__name__)
 
 
 # Helper serializer for listing users with sync status
@@ -139,7 +142,7 @@ class ZoimeUserSyncTriggerView(APIView):
             sync_status.zoime_password = generated_password
             sync_status.save()
 
-            print(
+            logger.exception(
                 f"ZOIME_SYNC: Generated and saved password for {user.username}: {generated_password}"
             )
 
@@ -162,7 +165,7 @@ class ZoimeUserSyncTriggerView(APIView):
             )
 
         try:
-            serializer = ZoimeUserSerializer(user)
+            serializer = ZoimeUserSerializer(instance=user)
             zoime_user_data = serializer.data
 
             success, response_data = client.post_user([zoime_user_data])
@@ -206,7 +209,7 @@ class ZoimeUserSyncTriggerView(APIView):
             sync_status.sync_attempted_at = timezone.now()
             sync_status.last_error = str(e)
             sync_status.save()
-            print(
+            logger.exception(
                 f"Error during Zoime sync for user {user.username} (PK: {pk}): {e}",
                 exc_info=True,
             )

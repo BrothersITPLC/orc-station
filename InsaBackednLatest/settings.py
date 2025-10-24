@@ -187,16 +187,6 @@ SYNCHRONIZABLE_MODELS = [
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-
-# CRONJOBS = [("* * * * *", "orcSync.cron.run_sync", ">> /app/logs/cron.log 2>&1")]
-
-
-# Redis as broker and backend
-# CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://localhost:6379/0")
-# CELERY_RESULT_BACKEND = config(
-#     "CELERY_RESULT_BACKEND", default="redis://localhost:6379/1"
-# )
-
 CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://redis:6379/0")
 CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default="redis://redis:6379/1")
 
@@ -212,7 +202,7 @@ CELERY_TASK_RETRY_POLICY = {
 CELERY_BEAT_SCHEDULE = {
     "sync-with-central": {
         "task": "orcSync.tasks.main_sync.run_sync_task",
-        "schedule": crontab(minute="*/1"),
+        "schedule": crontab(minute=f"*/{os.environ.get("CELERY_SCHEDULE")}"),
     },
 }
 

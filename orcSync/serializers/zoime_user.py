@@ -5,14 +5,10 @@ from users.models import CustomUser
 
 
 class ZoimeUserSerializer(serializers.ModelSerializer):
-    """
-    Serializes CustomUser instance data into the format expected by the
-    Zoime /api/User/PostUser endpoint.
-    """
-
     role = serializers.SerializerMethodField()
     password = serializers.SerializerMethodField()
     id = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
@@ -21,10 +17,10 @@ class ZoimeUserSerializer(serializers.ModelSerializer):
             "role",
             "first_name",
             "last_name",
-            "zoime_id",
             "email",
             "username",
             "password",
+            "status",
         ]
 
     def get_id(self, obj):
@@ -67,3 +63,10 @@ class ZoimeUserSerializer(serializers.ModelSerializer):
                 f"Zoime sync status not found for user {obj.username}. "
                 "Ensure ZoimeUserSyncStatus is created and 'zoime_password' is set."
             )
+
+    def get_status(self, obj):
+        """
+        Returns the user's active status for Zoime.
+        Adjust mapping as per Zoime API expectations (e.g., 'Active'/'Inactive').
+        """
+        return "active" if obj.is_active else "inactive"

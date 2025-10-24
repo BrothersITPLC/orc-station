@@ -44,31 +44,36 @@ class ZoimeAPIClient:
     def _authenticate(self):
         """
         Authenticates with the Zoime API to obtain a Bearer token.
-        Caches the token for subsequent requests within the same client instance.
+        Handles both JSON and plain-text responses.
         """
         if self._token_cache:
-            return self._token_cache  # Use cached token if available
+            return self._token_cache
 
         auth_url = f"{self._get_base_url()}/api/Token/Authenticate"
-        # Hardcoded credentials as per the prompt
         auth_payload = {"UserName": "WBS", "Password": "WBS"}
 
         try:
             response = requests.post(auth_url, json=auth_payload, timeout=10)
-            response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
-            data = response.json()
-            token = data.get("Token") or data.get(
-                "token"
-            )  # Account for potential case variations
+            response.raise_for_status()
+
+            token = None
+            try:
+                data = response.json()
+                token = data.get("Token") or data.get("token")
+            except ValueError:
+                token = response.text.strip()
+
             if not token:
                 raise ValueError(
-                    "Authentication successful but no token received in response."
+                    f"Authentication succeeded but no token found in response: {response.text!r}"
                 )
-            self._token_cache = token  # Cache the newly obtained token
+
+            self._token_cache = token
             return token
+
         except requests.RequestException as e:
             print(f"Error authenticating with Zoime API at {auth_url}: {e}")
-            raise  # Re-raise to be caught by the calling view
+            raise
         except ValueError as e:
             print(f"Zoime API authentication response error: {e}")
             raise
