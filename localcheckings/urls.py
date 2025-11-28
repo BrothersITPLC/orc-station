@@ -1,12 +1,12 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import (
+from localcheckings.views import (
     CheckinWithoutTruckView,
     UpdateLocalJourney,
+    WithoutTruckCheckinLogic,
     WithoutTruckJourneyViewset,
 )
-from .withoutTruckCheckingLogic import WithoutTruckCheckinLogic
 
 router = DefaultRouter()
 router.register(
@@ -14,7 +14,6 @@ router.register(
     WithoutTruckJourneyViewset,
     basename="journey_without_truck",
 )
-
 urlpatterns = [
     path(
         "without-truck-checkin",
@@ -27,7 +26,7 @@ urlpatterns = [
         name="update_without_truck_journey",
     ),
     path(
-        "without-truck-checking-logic/<phone_number>",
+        "without-truck-checking-logic/<unique_id>",
         WithoutTruckCheckinLogic.as_view(),
         name="without_truck_checkin_logic",
     ),

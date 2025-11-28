@@ -1,13 +1,9 @@
-# exporters/urls.py
-
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from . import views
+from tax.views import TaxViewSet
 
 router = DefaultRouter()
-router.register(r"tax", views.TaxViewSet)
+router.register(r"tax", TaxViewSet)
 
-urlpatterns = [
-    path("", include(router.urls)),
-]
+urlpatterns = [path("", include(router.urls))]

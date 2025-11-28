@@ -9,6 +9,7 @@ from base.models import BaseModel
 class Commodity(BaseModel):
     name = models.CharField(max_length=400, unique=True)
     unit_price = models.PositiveBigIntegerField()
+
     created_by = models.ForeignKey(
         "users.CustomUser",
         on_delete=models.PROTECT,

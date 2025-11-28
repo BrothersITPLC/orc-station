@@ -53,6 +53,12 @@ DATABASES = {
         "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
         "HOST": os.environ.get("POSTGRES_HOST"),
         "PORT": os.environ.get("POSTGRES_PORT"),
+        "CONN_MAX_AGE": 60, 
+        "CONN_HEALTH_CHECKS": True, 
+        "OPTIONS": {
+            "connect_timeout": 10,  
+            "options": "-c statement_timeout=30000"  
+        },
     },
     "central": {
         "ENGINE": "django.db.backends.postgresql",
@@ -61,6 +67,12 @@ DATABASES = {
         "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
         "HOST": "local_postgres",
         "PORT": 5432,
+        "CONN_MAX_AGE": 60,
+        "CONN_HEALTH_CHECKS": True,
+        "OPTIONS": {
+            "connect_timeout": 10,
+            "options": "-c statement_timeout=30000"
+        },
     },
 }
 
@@ -192,17 +204,27 @@ CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default="redis://redis:6
 
 
 CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1  
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 50  
+
+CELERY_TASK_SOFT_TIME_LIMIT = 300 
+CELERY_TASK_TIME_LIMIT = 360       
+
 CELERY_TASK_RETRY_POLICY = {
-    "max_retries": 5,
+    "max_retries": 3,
     "interval_start": 5,
-    "interval_step": 1,
-    "interval_max": 300,
+    "interval_step": 10,
+    "interval_max": 60,
 }
 
 CELERY_BEAT_SCHEDULE = {
     "sync-with-central": {
         "task": "orcSync.tasks.main_sync.run_sync_task",
-        "schedule": crontab(minute=f"*/{os.environ.get("CELERY_SCHEDULE")}"),
+        "schedule": crontab(minute=f"*/{os.environ.get('CELERY_SCHEDULE')}"),
+        "options": {
+            "expires": 240, 
+        },
     },
 }
 

@@ -17,7 +17,6 @@ from workstations.models import WorkedAt, WorkStation
 from workstations.serializers import WorkedAtSerializer, WorkStationSerializer
 
 from ..models import CustomUser
-from ..serializers import UserSerializer
 from .permissions import GroupPermission
 
 

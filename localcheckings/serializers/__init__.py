@@ -1,0 +1,1 @@
+from .journey_without_truck import JourneyWithoutTruckSerializer

@@ -45,7 +45,7 @@ services:
     container_name: dengego_celery_worker
     env_file:
       - .env
-    command: celery -A InsaBackednLatest  worker -l info
+    command: celery -A InsaBackednLatest worker -l info --concurrency=2 --max-tasks-per-child=50
     depends_on:
       - redis
       - insadb
@@ -55,6 +55,11 @@ services:
     networks:
       - dengego_orc_net
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
   celery_beat:
     build: .
     container_name: dengego_celery_beat
