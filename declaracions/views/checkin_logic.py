@@ -1,9 +1,12 @@
+import json
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from declaracions.serializers import CheckinSerializer, DeclaracionSerializer
+from declaracions.utils.qr_crypto import encrypt_qr_data
 from path.models import PathStation
 from tax.models import Tax
 from trucks.models import Truck
@@ -221,14 +224,37 @@ class CheckinLogic(APIView):
         serializer_current = CheckinSerializer(current_checkin)
         serializer_previous = CheckinSerializer(checkins, many=True)
 
-        return create_response(
-            {
-                "previousStations": serializer_previous.data,
-                "currentStation": serializer_current.data,
-                "declaracion": declaracion_serializer.data,
-            },
-            status.HTTP_200_OK,
-        )
+        # Generate QR code for offline sync if checkin is completed/paid
+        qr_data = None
+        if current_checkin.status in ['success', 'paid']:
+            try:
+                # Prepare QR payload with complete data
+                qr_payload = {
+                    'version': '1.0',
+                    'type': 'offline_sync',
+                    'checkin_id': str(current_checkin.id),
+                    'declaracion': declaracion_serializer.data,
+                    'checkin': serializer_current.data,
+                    'timestamp': timezone.now().isoformat(),
+                    'source_station': str(current_checkin.station.id) if current_checkin.station else None,
+                }
+                json_payload = json.dumps(qr_payload, ensure_ascii=False)
+                qr_data = encrypt_qr_data(json_payload)
+            except Exception as e:
+                print(f"QR generation failed: {e}")
+                # Don't fail the whole request if QR generation fails
+
+        response_data = {
+            "previousStations": serializer_previous.data,
+            "currentStation": serializer_current.data,
+            "declaracion": declaracion_serializer.data,
+        }
+        
+        # Only include QR data if successfully generated
+        if qr_data:
+            response_data["qr_data"] = qr_data
+
+        return create_response(response_data, status.HTTP_200_OK)
 
     def _handle_no_current_checkin(self, declaracion, declaracion_serializer, user):
         """

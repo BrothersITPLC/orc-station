@@ -15,7 +15,6 @@ from rest_framework.views import APIView
 
 from declaracions.models import Checkin, Declaracion, PaymentMethod
 from localcheckings.models import JourneyWithoutTruck
-from orcSync.permissions import WorkstationHasAPIKey
 from path.models import Path, PathStation
 from users.models import CustomUser
 
@@ -28,7 +27,6 @@ def generate_short_uuid():
 
 class DerashPay(APIView):
     # permission_classes = [AllowAny]
-    # permission_classes = [WorkstationHasAPIKey]
 
     def post(self, request):
         try:

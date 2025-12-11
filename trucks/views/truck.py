@@ -149,25 +149,41 @@ class TruckViewSet(viewsets.ModelViewSet):
     )
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        owner_data = {
-            "first_name": request.data.get("owner.first_name", [None])[0],
-            "last_name": request.data.get("owner.last_name", [None])[0],
-            "phone_number": request.data.get("owner.phone_number", [None])[0],
-            "home_number": request.data.get("owner.home_number", [""])[0],
-        }
-        data = request.data.copy()
-        print(owner_data)
-        if not owner_data:
-            return Response(
-                {"message": "Owner information is required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        plate_number = data.get("plate_number")
+        # Check for duplicate plate number first, before any database operations
+        plate_number = request.data.get("plate_number")
         if Truck.objects.filter(plate_number=plate_number).exists():
             return Response(
                 {"message": "Truck with this plate number already exists."},
                 status=status.HTTP_409_CONFLICT,
+            )
+        
+        # Extract owner data - handle both nested object format and form data format
+        owner_input = request.data.get("owner", {})
+        if isinstance(owner_input, dict):
+            # JSON format: {"owner": {"first_name": "John", ...}}
+            owner_data = {
+                "first_name": owner_input.get("first_name"),
+                "last_name": owner_input.get("last_name"),
+                "phone_number": owner_input.get("phone_number"),
+                "home_number": owner_input.get("home_number", ""),
+            }
+        else:
+            # Form data format: {"owner.first_name": ["John"], ...}
+            owner_data = {
+                "first_name": request.data.get("owner.first_name", [None])[0] if isinstance(request.data.get("owner.first_name"), list) else request.data.get("owner.first_name"),
+                "last_name": request.data.get("owner.last_name", [None])[0] if isinstance(request.data.get("owner.last_name"), list) else request.data.get("owner.last_name"),
+                "phone_number": request.data.get("owner.phone_number", [None])[0] if isinstance(request.data.get("owner.phone_number"), list) else request.data.get("owner.phone_number"),
+                "home_number": request.data.get("owner.home_number", [""])[0] if isinstance(request.data.get("owner.home_number"), list) else request.data.get("owner.home_number", ""),
+            }
+        
+        data = request.data.copy()
+        print(owner_data)
+        
+        # Validate owner data
+        if not owner_data.get("first_name") or not owner_data.get("last_name") or not owner_data.get("phone_number"):
+            return Response(
+                {"message": "Owner information (first_name, last_name, phone_number) is required."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:

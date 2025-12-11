@@ -11,8 +11,9 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
-# DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "False"
-DEBUG = True
+
+DEBUG = os.environ.get("DJANGO_DEBUG") != "False"
+
 ROOT_URLCONF = "InsaBackednLatest.urls"
 LANGUAGE_CODE = "en-us"
 USE_I18N = True
@@ -159,6 +160,7 @@ DERASH_SECRET_KEY = os.environ.get("DERASH_SECRET_KEY")
 DERASH_END_POINT = os.environ.get("DERASH_END_POINT")
 WEIGHTBRIDGE_TOKEN = os.environ.get("WEIGHTBRIDGE_TOKEN")
 EXTERNAL_URI_WEIGHT_BRIDGE = os.environ.get("EXTERNAL_URI_WEIGHT_BRIDGE")
+QR_ENCRYPTION_KEY = os.environ.get("QR_ENCRYPTION_KEY", "eyJuYW1lIjoiT3JvbWlhIFJldmVudWUiLCJ")
 STATIC_URL = "/static/"
 # CORS and CSRF settings
 CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
@@ -174,28 +176,6 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
-
-SYNCHRONIZABLE_MODELS = [
-    "drivers.Driver",
-    "workstations.WorkStation",
-    "workstations.WorkedAt",
-    "trucks.TruckOwner",
-    "trucks.Truck",
-    "exporters.TaxPayerType",
-    "exporters.Exporter",
-    "tax.Tax",
-    "users.Report",
-    "users.UserStatus",
-    "users.CustomUser",
-    "users.Department",
-    "address.RegionOrCity",
-    "address.ZoneOrSubcity",
-    "address.Woreda",
-    "declaracions.Commodity",
-    "declaracions.PaymentMethod",
-    "declaracions.ManualPayment",
-    "auth.Group",
-]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -228,7 +208,6 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
-
 SYNCHRONIZABLE_MODELS = [
     "drivers.Driver",
     "workstations.WorkStation",
@@ -247,8 +226,13 @@ SYNCHRONIZABLE_MODELS = [
     "address.Woreda",
     "declaracions.Commodity",
     "declaracions.PaymentMethod",
+    "declaracions.Declaracion",
+    "declaracions.Checkin",
+    "declaracions.ChangeTruck",
     "declaracions.ManualPayment",
     "auth.Group",
+    "path.Path",
+    "path.PathStation",
 ]
 
 USE_X_FORWARDED_HOST = True

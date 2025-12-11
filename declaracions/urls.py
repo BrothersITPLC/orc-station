@@ -14,6 +14,7 @@ from declaracions.views import (
     PaymentMethodViewSet,
     UpdateDeclaracion,
 )
+from declaracions.views.offline_sync import offline_sync_checkin
 
 from .payment import getDerashBill, manualPayment, payderash
 
@@ -52,4 +53,6 @@ urlpatterns = [
     path("", include(router.urls)),
     path("manualPayment", manualPayment.Paymanually.as_view(), name="manualPayment"),
     path("addDeduction", AddDeduction.as_view(), name="addDeduction"),
+    # Offline QR Sync endpoint (QR generation is included in check-logic response)
+    path("offline-sync/", offline_sync_checkin, name="offline-sync"),
 ]

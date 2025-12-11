@@ -48,3 +48,4 @@ wcwidth==0.2.13
 python-decouple>=3.8
 gunicorn>=20.1
 django-celery-beat>=2.5
+pycryptodome==3.19.0
