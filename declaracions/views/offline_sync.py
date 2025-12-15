@@ -91,7 +91,6 @@ def upsert_checkin_from_qr(checkin_data: dict, declaracion: Declaracion) -> tupl
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
 def offline_sync_checkin(request):
     """
     Receive and apply offline sync data from QR code scan.
@@ -109,6 +108,13 @@ def offline_sync_checkin(request):
         return Response({
             'error': 'qr_data field is required'
         }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Handle "OFFLINE:" prefix if present
+    if encrypted_data.startswith("OFFLINE:"):
+        encrypted_data = encrypted_data[8:]
+        
+    # Handle URL encoding issues (space to +)
+    encrypted_data = encrypted_data.replace(' ', '+')
     
     # Decrypt
     try:
@@ -158,32 +164,100 @@ def offline_sync_checkin(request):
             'error': f'QR code expired (age: {age.total_seconds() / 3600:.1f} hours)'
         }, status=status.HTTP_400_BAD_REQUEST)
     
-    # Extract data
-    declaracion_data = qr_payload.get('declaracion')
-    checkin_data = qr_payload.get('checkin')
     
-    if not declaracion_data or not checkin_data:
-        return Response({
-            'error': 'QR code missing declaracion or checkin data'
-        }, status=status.HTTP_400_BAD_REQUEST)
+    # Handle new minimal payload format (v1.0+)
+    # New format has declaracion_id, checkin_id instead of full objects
+    declaracion_id = qr_payload.get('declaracion_id')
+    checkin_id = qr_payload.get('checkin_id')
     
-    # Apply data in transaction
+    if not declaracion_id or not checkin_id:
+        # Fallback: Check for old format (full objects)
+        declaracion_data = qr_payload.get('declaracion')
+        checkin_data = qr_payload.get('checkin')
+        
+        if not declaracion_data or not checkin_data:
+            return Response({
+                'error': 'QR code missing required data (need declaracion_id/checkin_id or declaracion/checkin)'
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+    # Process legacy format with full objects
+        try:
+            with transaction.atomic():
+                declaracion = upsert_declaracion_from_qr(declaracion_data)
+                checkin, created = upsert_checkin_from_qr(checkin_data, declaracion)
+                
+            return Response({
+                'status': 'success',
+                'message': f"{'Created' if created else 'Updated'} checkin via offline sync (legacy)",
+                'checkin_id': str(checkin.id),
+                'declaracion_number': declaracion.declaracio_number,
+                'already_existed': not created,
+                'offline_synced': True,
+                'source_station': qr_payload.get('source_station'),
+                'synced_by': request.user.username,
+            }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                'error': f'Failed to apply offline sync (legacy): {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    # Process new minimal format (IDs only)
+    # QR contains all required foreign key IDs to create records at receiving station
     try:
         with transaction.atomic():
-            # Upsert declaracion
-            declaracion = upsert_declaracion_from_qr(declaracion_data)
+            # Create or get Declaracion with all required foreign keys
+            declaracion_defaults = {
+                'declaracio_number': qr_payload.get('declaracion_number', ''),
+                'truck_id': qr_payload.get('truck_id'),
+                'driver_id': qr_payload.get('driver_id'),
+                'exporter_id': qr_payload.get('exporter_id'),
+                'commodity_id': qr_payload.get('commodity_id'),
+                'path_id': qr_payload.get('path_id'),
+                'register_by_id': qr_payload.get('register_by_id'),
+                'status': 'PENDING',  # Will be updated when synced fully
+            }
+          
+            # Filter out None values
+            declaracion_defaults = {k: v for k, v in declaracion_defaults.items() if v is not None}
             
-            # Upsert checkin
-            checkin, created = upsert_checkin_from_qr(checkin_data, declaracion)
+            declaracion, decl_created = Declaracion.objects.get_or_create(
+                id=declaracion_id,
+                defaults=declaracion_defaults
+            )
+            
+            # Create/update checkin with data from QR
+            checkin_defaults = {
+                'declaracion': declaracion,
+                'status': qr_payload.get('status'),
+                'net_weight': qr_payload.get('net_weight'),
+                'rate': qr_payload.get('rate'),
+                'unit_price': qr_payload.get('unit_price'),
+                '_offline_synced': True,
+            }
+            
+            source_station_id = qr_payload.get('source_station_id')
+            if source_station_id:
+                checkin_defaults['station_id'] = source_station_id
+            
+            # Filter out None values
+            checkin_defaults = {k: v for k, v in checkin_defaults.items() if v is not None}
+            
+            checkin, created = Checkin.objects.update_or_create(
+                id=checkin_id,
+                defaults=checkin_defaults
+            )
             
         return Response({
             'status': 'success',
             'message': f"{'Created' if created else 'Updated'} checkin via offline sync",
             'checkin_id': str(checkin.id),
+            'declaracion_id': str(declaracion.id),
             'declaracion_number': declaracion.declaracio_number,
-            'already_existed': not created,
+            'declaracion_created': decl_created,
+            'checkin_created': created,
             'offline_synced': True,
-            'source_station': qr_payload.get('source_station'),
+            'truck_plate': qr_payload.get('truck_plate'),
             'synced_by': request.user.username,
         }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
         

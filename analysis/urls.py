@@ -256,8 +256,3 @@ urlpatterns = [
         name="revenue_and_number",
     ),
 ]
-
-
-# admin-combined-taxpayer-report
-# admin-revenue-and-issues
-#

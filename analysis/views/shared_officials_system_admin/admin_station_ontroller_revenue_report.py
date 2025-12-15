@@ -195,65 +195,52 @@ def admin_station_ontroller_revenue_report(request):
     }
 
     # 5. Perform database aggregation based on selected_date_type
-    aggregated_query = None
+    # 5. Perform aggregation in Python
+    # Iterate query and sum up revenue into `employee_revenue_by_category`
+
     if selected_date_type == "weekly":
-        db_day_to_category_map = {
-            2: "Monday",
-            3: "Tuesday",
-            4: "Wednesday",
-            5: "Thursday",
-            6: "Friday",
-            7: "Saturday",
-            1: "Sunday",
-        }
-        aggregated_query = (
-            checkins_with_revenue.annotate(time_unit=ExtractWeekDay("checkin_time"))
-            .values("employee_full_name", "time_unit")
-            .annotate(total_revenue=Coalesce(Sum("revenue"), Decimal(0)))
-            .order_by("employee_full_name", "time_unit")
+        checkins_with_revenue = checkins_with_revenue.annotate(
+            weekday_num=ExtractWeekDay("checkin_time")
         )
-        for item in aggregated_query:
-            employee_name = item["employee_full_name"]
-            day_label = db_day_to_category_map.get(item["time_unit"])
-            if employee_name in employee_revenue_by_category and day_label:
-                employee_revenue_by_category[employee_name][day_label] += item[
-                    "total_revenue"
-                ]
+        # 1=Sun ... 7=Sat
+        db_map = {
+            2: "Monday", 3: "Tuesday", 4: "Wednesday",
+            5: "Thursday", 6: "Friday", 7: "Saturday", 1: "Sunday"
+        }
+        for checkin in checkins_with_revenue:
+            emp_name = checkin.employee_full_name  # Annotated in step 4
+            day_label = db_map.get(checkin.weekday_num)
+            rev = checkin.revenue or Decimal(0)
+            
+            if emp_name in employee_revenue_by_category and day_label:
+                employee_revenue_by_category[emp_name][day_label] += rev
 
     elif selected_date_type == "monthly":
-        aggregated_query = (
-            checkins_with_revenue.annotate(
-                week_of_month=((ExtractDay("checkin_time") - 1) // 7) + 1
-            )
-            .values("employee_full_name", "week_of_month")
-            .annotate(total_revenue=Coalesce(Sum("revenue"), Decimal(0)))
-            .order_by("employee_full_name", "week_of_month")
+        checkins_with_revenue = checkins_with_revenue.annotate(
+            day_of_month=ExtractDay("checkin_time")
         )
-        for item in aggregated_query:
-            employee_name = item["employee_full_name"]
-            week_label = f"Week {item['week_of_month']}"
-            if (
-                employee_name in employee_revenue_by_category
-                and week_label in categories
-            ):
-                employee_revenue_by_category[employee_name][week_label] += item[
-                    "total_revenue"
-                ]
+        for checkin in checkins_with_revenue:
+            emp_name = checkin.employee_full_name
+            week_num = ((checkin.day_of_month - 1) // 7) + 1
+            week_label = f"Week {week_num}"
+            rev = checkin.revenue or Decimal(0)
+
+            if emp_name in employee_revenue_by_category and week_label in categories:
+                employee_revenue_by_category[emp_name][week_label] += rev
 
     elif selected_date_type == "yearly":
-        aggregated_query = (
-            checkins_with_revenue.annotate(time_unit=ExtractMonth("checkin_time"))
-            .values("employee_full_name", "time_unit")
-            .annotate(total_revenue=Coalesce(Sum("revenue"), Decimal(0)))
-            .order_by("employee_full_name", "time_unit")
+        checkins_with_revenue = checkins_with_revenue.annotate(
+            month_num=ExtractMonth("checkin_time")
         )
-        for item in aggregated_query:
-            employee_name = item["employee_full_name"]
-            month_label = month_name[item["time_unit"]]
-            if employee_name in employee_revenue_by_category and month_label:
-                employee_revenue_by_category[employee_name][month_label] += item[
-                    "total_revenue"
-                ]
+        for checkin in checkins_with_revenue:
+            emp_name = checkin.employee_full_name
+            m_num = checkin.month_num
+            rev = checkin.revenue or Decimal(0)
+            
+            if 1 <= m_num <= 12:
+                month_label = month_name[m_num]
+                if emp_name in employee_revenue_by_category and month_label:
+                    employee_revenue_by_category[emp_name][month_label] += rev
 
     # 6. Format response `series`
     series = []

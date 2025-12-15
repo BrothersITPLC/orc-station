@@ -99,37 +99,54 @@ def admin_top_regular_taxpayer_report(request):
         base_regular_checkins_query
     )
 
-    # 4. Aggregate data for top "Regular" taxpayers
-    top_regular_taxpayers_data = (
-        checkins_with_revenue_and_weight.annotate(
-            # Coalesce to handle potential nulls in exporter details
-            exporter_id=F("declaracion__exporter__id"),
-            first_name=Coalesce("declaracion__exporter__first_name", Value("")),
-            last_name=Coalesce("declaracion__exporter__last_name", Value("")),
-            tin_number=Coalesce("declaracion__exporter__tin_number", Value("")),
-            type_name=Coalesce("declaracion__exporter__type__name", Value("Unknown")),
-        )
-        .values(
-            "exporter_id",
-            "first_name",
-            "last_name",
-            "tin_number",
-            "type_name",
-        )
-        .annotate(
-            total_revenue=Coalesce(Sum("revenue"), Decimal(0)),
-            total_amount=Coalesce(Sum("incremental_weight"), Decimal(0)),
-            total_path=Coalesce(
-                Count("declaracion_id", distinct=True), 0
-            ),  # Count unique declarations
-        )
-        .filter(
-            total_path__gt=0
-        )  # Only include exporters with at least one declaration
-        .order_by("-total_path", "-total_revenue")[
-            :10
-        ]  # Order by declaration count, then revenue
-    )
+    # 4. Aggregate data for top "Regular" taxpayers (Python)
+    taxpayer_stats_map = {}
+
+    for checkin in checkins_with_revenue_and_weight:
+        # Access relationship fields.
+        decl = checkin.declaracion
+        exporter = decl.exporter
+        
+        if not exporter:
+            continue
+            
+        e_id = exporter.id
+        
+        if e_id not in taxpayer_stats_map:
+            # Safely get type name
+            t_name = "Unknown"
+            if exporter.type:
+                t_name = exporter.type.name
+                
+            taxpayer_stats_map[e_id] = {
+                "first_name": exporter.first_name,
+                "last_name": exporter.last_name,
+                "tin_number": exporter.tin_number,
+                "type_name": t_name,
+                "total_revenue": Decimal(0),
+                "total_amount": Decimal(0),
+                "path_set": set() # track unique declaracion_ids
+            }
+            
+        rev = checkin.revenue or Decimal(0)
+        weight = checkin.incremental_weight or Decimal(0)
+        
+        taxpayer_stats_map[e_id]["total_revenue"] += rev
+        taxpayer_stats_map[e_id]["total_amount"] += weight
+        taxpayer_stats_map[e_id]["path_set"].add(decl.id)
+
+    # Convert to list
+    stats_list = []
+    for e_id, stats in taxpayer_stats_map.items():
+        stats["total_path"] = len(stats["path_set"])
+        if stats["total_path"] > 0:
+            stats_list.append(stats)
+            
+    # Order by total_path (desc), then total_revenue (desc)
+    stats_list.sort(key=lambda x: (x["total_path"], x["total_revenue"]), reverse=True)
+    
+    # Take top 10
+    top_regular_taxpayers_data = stats_list[:10]
 
     # 5. Prepare the report data in the required format
     report_data = []

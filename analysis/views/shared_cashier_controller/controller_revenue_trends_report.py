@@ -149,80 +149,52 @@ def controller_revenue_trends_report(request):
     regular_data_map = {category: Decimal(0) for category in categories}
     walkin_data_map = {category: Decimal(0) for category in categories}
 
-    # 4. Perform database aggregation based on selected_date_type
+    # 4. Perform aggregation in Python
     if selected_date_type == "weekly":
-        # DB's ExtractWeekDay is 1=Sunday, 2=Monday, ..., 7=Saturday
-        # We need to map it to our 'categories' list which starts with Monday (index 0)
-        db_day_to_category_map = {
-            2: "Monday",
-            3: "Tuesday",
-            4: "Wednesday",
-            5: "Thursday",
-            6: "Friday",
-            7: "Saturday",
-            1: "Sunday",
-        }
-
-        aggregated_query = (
-            checkins_with_data.annotate(time_unit=ExtractWeekDay("checkin_time"))
-            .values("time_unit", "taxpayer_type")
-            .annotate(total_revenue=Coalesce(Sum("revenue"), Decimal(0)))
-            .order_by("time_unit", "taxpayer_type")
+        checkins_with_data = checkins_with_data.annotate(
+            weekday_num=ExtractWeekDay("checkin_time")
         )
-
-        for item in aggregated_query:
-            day_label = db_day_to_category_map.get(item["time_unit"])
+        db_map = {
+            2: "Monday", 3: "Tuesday", 4: "Wednesday",
+            5: "Thursday", 6: "Friday", 7: "Saturday", 1: "Sunday"
+        }
+        for checkin in checkins_with_data:
+            day_label = db_map.get(checkin.weekday_num)
             if day_label:
-                if item["taxpayer_type"] == "Regular":
-                    regular_data_map[day_label] += item["total_revenue"]
-                elif item["taxpayer_type"] == "Walk-in":
-                    walkin_data_map[day_label] += item["total_revenue"]
+                rev = checkin.revenue or Decimal(0)
+                if checkin.taxpayer_type == "Regular":
+                    regular_data_map[day_label] += rev
+                elif checkin.taxpayer_type == "Walk-in":
+                    walkin_data_map[day_label] += rev
 
     elif selected_date_type == "monthly":
-        # The `parse_and_validate_date_range` helper for 'monthly' ensures a full calendar month.
-        # We'll calculate week number within the month.
-
-        aggregated_query = (
-            checkins_with_data.annotate(
-                # Calculate week number relative to the start of the month (1-indexed)
-                week_of_month=((ExtractDay("checkin_time") - 1) // 7)
-                + 1
-            )
-            .values("week_of_month", "taxpayer_type")
-            .annotate(total_revenue=Coalesce(Sum("revenue"), Decimal(0)))
-            .order_by("week_of_month", "taxpayer_type")
+        checkins_with_data = checkins_with_data.annotate(
+            day_of_month=ExtractDay("checkin_time")
         )
-
-        for item in aggregated_query:
-            week_num = item["week_of_month"]
+        for checkin in checkins_with_data:
+            week_num = ((checkin.day_of_month - 1) // 7) + 1
             week_label = f"Week {week_num}"
-            if (
-                week_label in categories
-            ):  # Ensure the week label is valid for our defined categories
-                if item["taxpayer_type"] == "Regular":
-                    regular_data_map[week_label] += item["total_revenue"]
-                elif item["taxpayer_type"] == "Walk-in":
-                    walkin_data_map[week_label] += item["total_revenue"]
+            if week_label in categories:
+                rev = checkin.revenue or Decimal(0)
+                if checkin.taxpayer_type == "Regular":
+                    regular_data_map[week_label] += rev
+                elif checkin.taxpayer_type == "Walk-in":
+                    walkin_data_map[week_label] += rev
 
     elif selected_date_type == "yearly":
-        aggregated_query = (
-            checkins_with_data.annotate(
-                time_unit=ExtractMonth("checkin_time")  # 1=Jan, 12=Dec
-            )
-            .values("time_unit", "taxpayer_type")
-            .annotate(total_revenue=Coalesce(Sum("revenue"), Decimal(0)))
-            .order_by("time_unit", "taxpayer_type")
+        checkins_with_data = checkins_with_data.annotate(
+            month_num=ExtractMonth("checkin_time")
         )
-
-        for item in aggregated_query:
-            month_label = month_name[
-                item["time_unit"]
-            ]  # Map month number to full month name
-            if month_label:
-                if item["taxpayer_type"] == "Regular":
-                    regular_data_map[month_label] += item["total_revenue"]
-                elif item["taxpayer_type"] == "Walk-in":
-                    walkin_data_map[month_label] += item["total_revenue"]
+        for checkin in checkins_with_data:
+            m_num = checkin.month_num
+            if 1 <= m_num <= 12:
+                month_label = month_name[m_num]
+                if month_label:
+                    rev = checkin.revenue or Decimal(0)
+                    if checkin.taxpayer_type == "Regular":
+                        regular_data_map[month_label] += rev
+                    elif checkin.taxpayer_type == "Walk-in":
+                        walkin_data_map[month_label] += rev
 
     # 5. Build series data, ensuring order matches categories and converting Decimals to floats
     regular_series = [

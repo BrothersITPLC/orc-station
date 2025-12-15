@@ -11,8 +11,13 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from drf_spectacular.utils import extend_schema, OpenApiExample
 from helper.custom_pagination import CustomLimitOffsetPagination
-from users.serializers import PasswordChangeSerializer, UserSerializer
+from users.serializers import (
+    AdminPasswordResetSerializer,
+    PasswordChangeSerializer,
+    UserSerializer,
+)
 from workstations.models import WorkedAt, WorkStation
 from workstations.serializers import WorkedAtSerializer, WorkStationSerializer
 
@@ -236,6 +241,113 @@ class AssignWorkStation(APIView):
             return Response({"message": "success"}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class AdminPasswordResetView(APIView):
+    """
+    API view for admin to reset any user's password.
+    
+    Only users with proper admin permissions can access this endpoint.
+    """
+    
+    permission_classes = [GroupPermission]
+    permission_required = "change_customuser"
+
+    @extend_schema(
+        summary="Admin password reset",
+        description="""Reset a user's password by admin without requiring the old password.
+        
+        **Process:**
+        - Admin provides the user ID and new password
+        - System validates the new password
+        - Password is updated for the specified user
+        - User can immediately log in with the new password
+        
+        **Security:**
+        - Requires admin permissions (change_customuser)
+        - Password must meet security requirements (minimum 8 characters)
+        - Cannot reset superuser passwords
+        """,
+        tags=["User Management - Admin Operations"],
+        request=AdminPasswordResetSerializer,
+        responses={
+            200: {
+                "description": "Password reset successful",
+                "type": "object",
+                "properties": {
+                    "success": {"type": "string"},
+                    "user_id": {"type": "string"},
+                },
+            },
+            400: {"description": "Invalid request data or validation error"},
+            403: {"description": "Permission denied - admin access required"},
+            404: {"description": "User not found"},
+        },
+        examples=[
+            OpenApiExample(
+                "Admin Password Reset Request",
+                value={
+                    "user_id": "123e4567-e89b-12d3-a456-426614174000",
+                    "new_password": "NewSecurePass123!",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Success Response",
+                value={
+                    "success": "Password has been reset successfully.",
+                    "user_id": "123e4567-e89b-12d3-a456-426614174000",
+                },
+                response_only=True,
+            ),
+            OpenApiExample(
+                "User Not Found Response",
+                value={"error": "User with this ID does not exist."},
+                response_only=True,
+                status_codes=["404"],
+            ),
+        ],
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = AdminPasswordResetSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user_id = serializer.validated_data["user_id"]
+        new_password = serializer.validated_data["new_password"]
+
+        try:
+            user = CustomUser.objects.get(id=user_id)
+            
+            # Prevent resetting superuser passwords
+            if user.is_superuser:
+                return Response(
+                    {"error": "Cannot reset superuser password."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            
+            # Set the new password
+            user.set_password(new_password)
+            user.save()
+
+            return Response(
+                {
+                    "success": "Password has been reset successfully.",
+                    "user_id": str(user.id),
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except CustomUser.DoesNotExist:
+            return Response(
+                {"error": "User with this ID does not exist."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"An error occurred: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 def custom_404_view(request, exception):

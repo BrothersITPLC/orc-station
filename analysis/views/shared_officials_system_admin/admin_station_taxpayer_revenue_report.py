@@ -111,16 +111,19 @@ def admin_station_taxpayer_revenue_report(request):
         .filter(taxpayer_type__in=["regular", "walkin"])
     )  # Only consider valid taxpayer types
 
-    # 5. Aggregate revenue and incremental weight per station and taxpayer type
-    station_taxpayer_aggregates = (
-        checkins_with_data.values("station__name", "taxpayer_type")
-        .annotate(
-            total_revenue_sum=Coalesce(Sum("revenue"), Decimal(0)),
-            total_amount_sum=Coalesce(Sum("incremental_weight"), Decimal(0)),
-            # transaction_count=Coalesce(Count('id'), 0), # Not explicitly aggregated in the original output, keeping it at 0.
-        )
-        .order_by("station__name", "taxpayer_type")
-    )
+    # 5. Aggregate revenue and incremental weight per station and taxpayer type (Python)
+    for checkin in checkins_with_data:
+        # Checkin has annotated fields from steps above
+        s_name = checkin.station.name if checkin.station else None
+        t_type = checkin.taxpayer_type
+        
+        if s_name and t_type in ["regular", "walkin"]:
+            rev = checkin.revenue or Decimal(0)
+            weight = checkin.incremental_weight or Decimal(0)
+            
+            if s_name in data:
+                 data[s_name][t_type]["total_revenue"] += rev
+                 data[s_name][t_type]["total_amount"] += weight
 
     # 6. Populate the `data` dictionary with the aggregated results
     for item in station_taxpayer_aggregates:

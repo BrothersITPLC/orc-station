@@ -135,62 +135,59 @@ def admin_each_station_revenue_trends_report(request):
         for station in all_stations
     }
 
-    # 4. Perform database aggregation based on selected_date_type
+    # 4. Perform aggregation in Python
+    # We iterate through the queryset (which has revenue annotated) and accumulate
+    # totals into our nested dictionary structure based on the date type.
+
     if selected_date_type == "weekly":
-        db_day_to_category_map = {
-            2: "Monday",
-            3: "Tuesday",
-            4: "Wednesday",
-            5: "Thursday",
-            6: "Friday",
-            7: "Saturday",
-            1: "Sunday",
-        }
-
-        aggregated_query = (
-            checkins_with_revenue.annotate(time_unit=ExtractWeekDay("checkin_time"))
-            .values("station__name", "time_unit")
-            .annotate(total_revenue=Coalesce(Sum("revenue"), Decimal(0)))
-            .order_by("station__name", "time_unit")
+        # Annotate with week day to easily map to categories
+        checkins_with_revenue = checkins_with_revenue.annotate(
+            weekday_num=ExtractWeekDay("checkin_time")
         )
-
-        for item in aggregated_query:
-            station_name = item["station__name"]
-            day_label = db_day_to_category_map.get(item["time_unit"])
-            if station_name in station_revenue_map and day_label:
-                station_revenue_map[station_name][day_label] += item["total_revenue"]
+        # DB: 1=Sunday, 2=Monday... 7=Saturday
+        db_map = {
+            2: "Monday", 3: "Tuesday", 4: "Wednesday",
+            5: "Thursday", 6: "Friday", 7: "Saturday", 1: "Sunday"
+        }
+        for checkin in checkins_with_revenue:
+            rev = checkin.revenue or Decimal(0)
+            day_label = db_map.get(checkin.weekday_num)
+            if checkin.station and day_label:
+                s_name = checkin.station.name
+                if s_name in station_revenue_map:
+                    station_revenue_map[s_name][day_label] += rev
 
     elif selected_date_type == "monthly":
-        # Group by week number within the month
-        aggregated_query = (
-            checkins_with_revenue.annotate(
-                week_of_month=((ExtractDay("checkin_time") - 1) // 7) + 1
-            )
-            .values("station__name", "week_of_month")
-            .annotate(total_revenue=Coalesce(Sum("revenue"), Decimal(0)))
-            .order_by("station__name", "week_of_month")
+        # Annotate with day of month to calculate week number
+        checkins_with_revenue = checkins_with_revenue.annotate(
+            day_of_month=ExtractDay("checkin_time")
         )
-
-        for item in aggregated_query:
-            station_name = item["station__name"]
-            week_num = item["week_of_month"]
+        for checkin in checkins_with_revenue:
+            rev = checkin.revenue or Decimal(0)
+            # Week number calculation: ((day-1) // 7) + 1
+            week_num = ((checkin.day_of_month - 1) // 7) + 1
             week_label = f"Week {week_num}"
-            if station_name in station_revenue_map and week_label in categories:
-                station_revenue_map[station_name][week_label] += item["total_revenue"]
+            
+            if checkin.station and week_label in categories:
+                s_name = checkin.station.name
+                if s_name in station_revenue_map:
+                    station_revenue_map[s_name][week_label] += rev
 
     elif selected_date_type == "yearly":
-        aggregated_query = (
-            checkins_with_revenue.annotate(time_unit=ExtractMonth("checkin_time"))
-            .values("station__name", "time_unit")
-            .annotate(total_revenue=Coalesce(Sum("revenue"), Decimal(0)))
-            .order_by("station__name", "time_unit")
+        # Annotate with month number
+        checkins_with_revenue = checkins_with_revenue.annotate(
+            month_num=ExtractMonth("checkin_time")
         )
-
-        for item in aggregated_query:
-            station_name = item["station__name"]
-            month_label = month_name[item["time_unit"]]
-            if station_name in station_revenue_map and month_label:
-                station_revenue_map[station_name][month_label] += item["total_revenue"]
+        for checkin in checkins_with_revenue:
+            rev = checkin.revenue or Decimal(0)
+            m_num = checkin.month_num
+            # month_name array: index 0 is empty string, 1=Jan
+            if 1 <= m_num <= 12:
+                month_label = month_name[m_num]
+                if checkin.station:
+                    s_name = checkin.station.name
+                    if s_name in station_revenue_map:
+                        station_revenue_map[s_name][month_label] += rev
 
     # 5. Build series data, ensuring all categories are present with 0 if no data
     series = []

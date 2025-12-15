@@ -146,7 +146,8 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
+    "common.middleware.DisableCSRFForAPIMiddleware",  
+    # "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -160,7 +161,7 @@ DERASH_SECRET_KEY = os.environ.get("DERASH_SECRET_KEY")
 DERASH_END_POINT = os.environ.get("DERASH_END_POINT")
 WEIGHTBRIDGE_TOKEN = os.environ.get("WEIGHTBRIDGE_TOKEN")
 EXTERNAL_URI_WEIGHT_BRIDGE = os.environ.get("EXTERNAL_URI_WEIGHT_BRIDGE")
-QR_ENCRYPTION_KEY = os.environ.get("QR_ENCRYPTION_KEY", "eyJuYW1lIjoiT3JvbWlhIFJldmVudWUiLCJ")
+QR_ENCRYPTION_KEY = "eyJuYW1lIjoiT3JvbWlhIFJldmVudWUiLCJ"
 STATIC_URL = "/static/"
 # CORS and CSRF settings
 CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")

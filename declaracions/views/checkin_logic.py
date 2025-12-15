@@ -1,4 +1,6 @@
 import json
+import traceback
+from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework import status
@@ -224,25 +226,42 @@ class CheckinLogic(APIView):
         serializer_current = CheckinSerializer(current_checkin)
         serializer_previous = CheckinSerializer(checkins, many=True)
 
-        # Generate QR code for offline sync if checkin is completed/paid
+        # Generate QR code for offline sync (Tag QR - always generated)
+        # CRITICAL: Keep payload SMALL to fit in QR code (max ~3000 chars after encryption)
         qr_data = None
-        if current_checkin.status in ['success', 'paid']:
-            try:
-                # Prepare QR payload with complete data
-                qr_payload = {
-                    'version': '1.0',
-                    'type': 'offline_sync',
-                    'checkin_id': str(current_checkin.id),
-                    'declaracion': declaracion_serializer.data,
-                    'checkin': serializer_current.data,
-                    'timestamp': timezone.now().isoformat(),
-                    'source_station': str(current_checkin.station.id) if current_checkin.station else None,
-                }
-                json_payload = json.dumps(qr_payload, ensure_ascii=False)
-                qr_data = encrypt_qr_data(json_payload)
-            except Exception as e:
-                print(f"QR generation failed: {e}")
-                # Don't fail the whole request if QR generation fails
+        try:
+            # Minimal payload with IDs - receiving station will create records from these IDs
+            # Include all required foreign key IDs to avoid constraint violations
+            qr_payload = {
+                'version': '1.0',
+                'type': 'offline_sync',
+                'checkin_id': str(current_checkin.id),
+                'declaracion_id': str(declaracion.id),
+                'declaracion_number': declaracion.declaracio_number,
+                'timestamp': timezone.now().isoformat(),
+                # Required foreign keys for Declaracion
+                'truck_id': str(declaracion.truck.id) if declaracion.truck else None,
+                'driver_id': str(declaracion.driver.id) if declaracion.driver else None,
+                'exporter_id': str(declaracion.exporter.id) if declaracion.exporter else None,
+                'commodity_id': str(declaracion.commodity.id) if declaracion.commodity else None,
+                'path_id': str(declaracion.path.id) if declaracion.path else None,
+                'register_by_id': str(declaracion.register_by.id) if declaracion.register_by else None,
+                # Checkin data
+                'source_station_id': str(current_checkin.station.id) if current_checkin.station else None,
+                'status': current_checkin.status,
+                'net_weight': str(current_checkin.net_weight),
+                'rate': str(current_checkin.rate) if current_checkin.rate else None,
+                'unit_price': str(current_checkin.unit_price) if current_checkin.unit_price else None,
+                # Human-readable for debugging
+                'truck_plate': declaracion.truck.plate_number if declaracion.truck else None,
+            }
+            json_payload = json.dumps(qr_payload, ensure_ascii=False, cls=DjangoJSONEncoder)
+            qr_data = "OFFLINE:" + encrypt_qr_data(json_payload)
+            print(f"Tag QR payload size: {len(json_payload)} chars, encrypted: {len(qr_data)} chars")
+        except Exception as e:
+            print(f"Tag QR generation failed: {e}")
+            print(f"Traceback: {traceback.format_exc()}")
+            # Don't fail the whole request if QR generation fails
 
         response_data = {
             "previousStations": serializer_previous.data,
@@ -250,9 +269,30 @@ class CheckinLogic(APIView):
             "declaracion": declaracion_serializer.data,
         }
         
-        # Only include QR data if successfully generated
+        # Always include encrypted Tag QR data if successfully generated
         if qr_data:
             response_data["qr_data"] = qr_data
+        
+        # Generate plain text Receipt QR data (for user transparency)
+        try:
+            receipt_data = {
+                'plate_number': declaracion.truck.plate_number if declaracion.truck else None,
+                'driver_name': f"{declaracion.driver.first_name} {declaracion.driver.last_name}" if declaracion.driver else None,
+                'taxpayer_name': f"{declaracion.exporter.first_name} {declaracion.exporter.last_name}" if declaracion.exporter else None,
+                'tin_number': declaracion.exporter.tin_number if declaracion.exporter else None,
+                'station_name': current_checkin.station.name if current_checkin.station else None,
+                'assessment_number': declaracion.declaracio_number,
+                'status': current_checkin.status,
+                'commodity_type': declaracion.commodity.name if declaracion.commodity else None,
+                'total_weight': str(current_checkin.net_weight),
+                'checkin_time': current_checkin.checkin_time.isoformat() if current_checkin.checkin_time else None,
+                'rate': str(current_checkin.rate) if current_checkin.rate else None,
+                'unit_price': str(current_checkin.unit_price) if current_checkin.unit_price else None,
+            }
+            response_data["receipt_qr_data"] = json.dumps(receipt_data, ensure_ascii=False)
+        except Exception as e:
+            print(f"Receipt QR generation failed: {e}")
+            # Don't fail the whole request if receipt QR generation fails
 
         return create_response(response_data, status.HTTP_200_OK)
 

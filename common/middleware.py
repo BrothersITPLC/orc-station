@@ -145,6 +145,8 @@ class AttachJWTTokenMiddleware:
                 "completed_declaracion-detail",
                 "zoime-sync-user-list",
                 "zoime-sync-user-trigger",
+                "admin-password-reset",
+                "offline-sync"
             ]
             and request.path != "/admin/login/"
         ):
@@ -361,4 +363,15 @@ class DisplayCurrentUserMiddleware(MiddlewareMixin):
                 set_current_user(None)
         except Exception:
             set_current_user(None)
+        return None
+
+
+class DisableCSRFForAPIMiddleware(MiddlewareMixin):
+    """
+    Middleware to disable CSRF validation for all /api/* endpoints.
+    This allows testing with API clients like Postman, Bruno, etc.
+    """
+    def process_request(self, request):
+        if request.path.startswith("/api/"):
+            setattr(request, '_dont_enforce_csrf_checks', True)
         return None

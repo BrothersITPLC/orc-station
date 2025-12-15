@@ -113,20 +113,14 @@ def admin_each_station_walkin_total_revenue_report(request):
     # station_revenues_map: { "Station Name": Decimal(0) }
     station_revenues_map = {station.name: Decimal(0) for station in all_stations}
 
-    # 4. Perform database aggregation: sum `revenue` per station
-    # The intermediate 'categories' logic (weekly, monthly, yearly) is not needed
-    # for the final output which is just a sum per station.
-    # We can directly sum `revenue` grouped by station.
-    aggregated_revenues = (
-        checkins_with_revenue.values("station__name")
-        .annotate(total_station_revenue=Coalesce(Sum("revenue"), Decimal(0)))
-        .order_by("station__name")
-    )
-
-    for item in aggregated_revenues:
-        station_name = item["station__name"]
-        if station_name in station_revenues_map:  # Defensive check
-            station_revenues_map[station_name] = item["total_station_revenue"]
+    # 4. Perform aggregation in Python
+    # Sum revenue manually
+    for checkin in checkins_with_revenue:
+        rev = checkin.revenue or Decimal(0)
+        if checkin.station:
+            s_name = checkin.station.name
+            if s_name in station_revenues_map:
+                station_revenues_map[s_name] += rev
 
     # 5. Build the final `data` list, ensuring it matches the order of `labels`
     data_list = [

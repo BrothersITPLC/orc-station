@@ -78,13 +78,18 @@ def revenue_breakdown_report(request):
             regular_checkins_query
         )
 
-        # Aggregate total revenue and count distinct exporters
-        regular_aggregates = regular_checkins_with_revenue.aggregate(
-            total_revenue=Coalesce(Sum("revenue"), Decimal(0)),
-            unique_exporters=Coalesce(Count("declaracion__exporter", distinct=True), 0),
-        )
-        from_regular = regular_aggregates["total_revenue"]
-        regular_exporters_count = regular_aggregates["unique_exporters"]
+        # Aggregate using Python
+        regular_exporter_ids = set()
+        for checkin in regular_checkins_with_revenue:
+            rev = checkin.revenue or Decimal(0)
+            from_regular += rev
+            
+            # Check exporter
+            # For regular, it's declaracion__exporter
+            if checkin.declaracion and checkin.declaracion.exporter_id:
+                regular_exporter_ids.add(checkin.declaracion.exporter_id)
+                
+        regular_exporters_count = len(regular_exporter_ids)
 
     # 3. Process Revenue and Exporters for 'Walk-in Taxpayers' (LocalJourney-based)
     walkin_checkins_query = Checkin.objects.filter(
@@ -96,15 +101,18 @@ def revenue_breakdown_report(request):
             walkin_checkins_query
         )
 
-        # Aggregate total revenue and count distinct exporters
-        walkin_aggregates = walkin_checkins_with_revenue.aggregate(
-            total_revenue=Coalesce(Sum("revenue"), Decimal(0)),
-            unique_exporters=Coalesce(
-                Count("localJourney__exporter", distinct=True), 0
-            ),
-        )
-        from_walkIn = walkin_aggregates["total_revenue"]
-        walkin_exporters_count = walkin_aggregates["unique_exporters"]
+        # Aggregate using Python
+        walkin_exporter_ids = set()
+        for checkin in walkin_checkins_with_revenue:
+            rev = checkin.revenue or Decimal(0)
+            from_walkIn += rev
+            
+            # Check exporter
+            # For walk-in, it's localJourney__exporter
+            if checkin.localJourney and checkin.localJourney.exporter_id:
+                walkin_exporter_ids.add(checkin.localJourney.exporter_id)
+        
+        walkin_exporters_count = len(walkin_exporter_ids)
 
     # 4. Final Calculation and Response (structure preserved for frontend)
     total = from_regular + from_walkIn

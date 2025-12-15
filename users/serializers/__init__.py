@@ -1,3 +1,4 @@
+from .admin_password_reset import AdminPasswordResetSerializer
 from .department import DepartmentSerializer
 from .group import GroupSerializer
 from .password_change import PasswordChangeSerializer

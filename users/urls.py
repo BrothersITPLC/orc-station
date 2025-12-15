@@ -48,6 +48,11 @@ urlpatterns = [
     path("give_report", views.GiveReportIssueForEmployer.as_view(), name="give_report"),
     path(
         "read_report/<uuid:user_id>", views.ReadReportIsue.as_view(), name="read_report"
+    ),    
+    path(
+        "admin-password-reset",
+        views.AdminPasswordResetView.as_view(),
+        name="admin-password-reset",
     ),
 ]
 

@@ -42,18 +42,28 @@ def yearly_revenue_report(request):
     base_queryset = Checkin.objects.filter(**filters)
     checkins_with_revenue = annotate_revenue_on_checkins(base_queryset)
 
-    monthly_revenue = (
-        checkins_with_revenue.annotate(month=TruncMonth("checkin_time"))
-        .values("month")
-        .annotate(total_revenue=Sum("revenue"))
-        .order_by("month")
-    )
+    # Aggregate in Python
+    # Use a dictionary to sum revenue by month string e.g. "2023-11"
+    monthly_map = defaultdict(Decimal)
+
+    # We need to extract month from checkin_time in python or annotation
+    # TruncMonth in annotation is fine as it doesn't aggregate.
+    checkins_with_revenue = checkins_with_revenue.annotate(month=TruncMonth("checkin_time"))
+
+    for checkin in checkins_with_revenue:
+        # TruncMonth returns a datetime/date object
+        m_str = checkin.month.strftime("%Y-%m")
+        rev = checkin.revenue or Decimal(0)
+        monthly_map[m_str] += rev
+    
+    # Sort keys to ensure chronological order
+    sorted_months = sorted(monthly_map.keys())
 
     labels = []
     data = []
-    for item in monthly_revenue:
-        labels.append(item["month"].strftime("%Y-%m"))
-        data.append(item["total_revenue"] or 0)
+    for m_str in sorted_months:
+        labels.append(m_str)
+        data.append(monthly_map[m_str])
 
     response_data = {"labels": labels, "data": data}
 

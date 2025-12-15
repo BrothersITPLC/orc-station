@@ -131,70 +131,43 @@ def controller_total_revenue_trends_report(request):
     revenue_data_map = {label: Decimal(0) for label in labels}
 
     # 4. Perform database aggregation based on selected_date_type
+    # 4. Perform aggregation in Python
     if selected_date_type == "weekly":
-        # DB's ExtractWeekDay is 1=Sunday, 2=Monday, ..., 7=Saturday
-        # Map it to our 'labels' list which starts with Monday (index 0)
-        db_day_to_label_map = {
-            2: "Monday",
-            3: "Tuesday",
-            4: "Wednesday",
-            5: "Thursday",
-            6: "Friday",
-            7: "Saturday",
-            1: "Sunday",
-        }
-
-        aggregated_query = (
-            checkins_with_revenue.annotate(time_unit=ExtractWeekDay("checkin_time"))
-            .values("time_unit")
-            .annotate(total_revenue=Coalesce(Sum("revenue"), Decimal(0)))
-            .order_by("time_unit")
+        checkins_with_revenue = checkins_with_revenue.annotate(
+            weekday_num=ExtractWeekDay("checkin_time")
         )
-
-        for item in aggregated_query:
-            day_label = db_day_to_label_map.get(item["time_unit"])
+        db_map = {
+            2: "Monday", 3: "Tuesday", 4: "Wednesday",
+            5: "Thursday", 6: "Friday", 7: "Saturday", 1: "Sunday"
+        }
+        for checkin in checkins_with_revenue:
+            day_label = db_map.get(checkin.weekday_num)
+            rev = checkin.revenue or Decimal(0)
             if day_label:
-                revenue_data_map[day_label] += item["total_revenue"]
+                revenue_data_map[day_label] += rev
 
     elif selected_date_type == "monthly":
-        # The `parse_and_validate_date_range` helper for 'monthly' ensures a full calendar month.
-        # We'll calculate week number within the month.
-
-        aggregated_query = (
-            checkins_with_revenue.annotate(
-                # Calculate week number relative to the start of the month (1-indexed)
-                week_of_month=((ExtractDay("checkin_time") - 1) // 7)
-                + 1
-            )
-            .values("week_of_month")
-            .annotate(total_revenue=Coalesce(Sum("revenue"), Decimal(0)))
-            .order_by("week_of_month")
+        checkins_with_revenue = checkins_with_revenue.annotate(
+            day_of_month=ExtractDay("checkin_time")
         )
-
-        for item in aggregated_query:
-            week_num = item["week_of_month"]
+        for checkin in checkins_with_revenue:
+            week_num = ((checkin.day_of_month - 1) // 7) + 1
             week_label = f"Week {week_num}"
-            if (
-                week_label in labels
-            ):  # Ensure the week label is valid for our defined labels
-                revenue_data_map[week_label] += item["total_revenue"]
+            rev = checkin.revenue or Decimal(0)
+            if week_label in labels:
+                revenue_data_map[week_label] += rev
 
     elif selected_date_type == "yearly":
-        aggregated_query = (
-            checkins_with_revenue.annotate(
-                time_unit=ExtractMonth("checkin_time")  # 1=Jan, 12=Dec
-            )
-            .values("time_unit")
-            .annotate(total_revenue=Coalesce(Sum("revenue"), Decimal(0)))
-            .order_by("time_unit")
+        checkins_with_revenue = checkins_with_revenue.annotate(
+            month_num=ExtractMonth("checkin_time")
         )
-
-        for item in aggregated_query:
-            month_label = month_name[
-                item["time_unit"]
-            ]  # Map month number to full month name
-            if month_label:
-                revenue_data_map[month_label] += item["total_revenue"]
+        for checkin in checkins_with_revenue:
+            m_num = checkin.month_num
+            rev = checkin.revenue or Decimal(0)
+            if 1 <= m_num <= 12:
+                month_label = month_name[m_num]
+                if month_label:
+                    revenue_data_map[month_label] += rev
 
     # 5. Build series data, ensuring order matches labels and converting Decimals to floats
     series_data_list = [

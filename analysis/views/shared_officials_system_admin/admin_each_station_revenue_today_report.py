@@ -72,30 +72,21 @@ def admin_each_station_revenue_today_report(request):
     checkins_with_revenue = annotate_revenue_on_checkins(base_checkins_query)
 
     # 4. Perform a single database aggregation for all required metrics per station
-    aggregated_station_stats = (
-        checkins_with_revenue.values(
-            "station__id", "station__name"
-        )  # Group by station ID and name
-        .annotate(
-            sum_revenue=Coalesce(Sum("revenue"), Decimal(0)),
-            sum_weight=Coalesce(Sum("incremental_weight"), Decimal(0)),
-            count_transactions=Coalesce(Count("id"), 0),
-        )
-        .order_by("station__name")  # Order for consistent processing
-    )
+    # 4. Perform aggregation in Python
+    # Checkin query is already executed when iterating
+    for checkin in checkins_with_revenue:
+        # annotations: revenue, incremental_weight
+        # station is fetched via filter
+        if checkin.station_id:
+            sid_str = str(checkin.station_id)
+            if sid_str in station_data:
+                rev = checkin.revenue or Decimal(0)
+                weight = checkin.incremental_weight or Decimal(0)
+                
+                station_data[sid_str]["total_revenue"] += float(rev)
+                station_data[sid_str]["total_weight"] += float(weight)
+                station_data[sid_str]["transaction"] += 1
 
-    # 5. Populate the `station_data` dictionary with aggregated results
-    for item in aggregated_station_stats:
-        station_id_str = str(item["station__id"])
-        if station_id_str in station_data:
-            station_data[station_id_str]["total_revenue"] = float(
-                item["sum_revenue"].quantize(Decimal("0.0"))
-            )
-            station_data[station_id_str]["transaction"] = item["count_transactions"]
-            station_data[station_id_str]["total_weight"] = float(
-                item["sum_weight"].quantize(Decimal("0.0"))
-            )
-
-    # 6. Format response (frontend compatible)
+    # 5. Format response (frontend compatible)
     response_data = {"data": station_data}
     return Response(response_data)
