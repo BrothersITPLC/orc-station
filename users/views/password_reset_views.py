@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..models import CustomUser
+from users.utils.password_validator import validate_password_strength
 
 
 class PasswordResetRequestView(APIView):
@@ -157,6 +158,19 @@ class PasswordResetConfirmView(APIView):
 
         if user and default_token_generator.check_token(user, token):
             new_password = request.data.get("new_password")
+            
+            # Validate password strength
+            is_valid, errors = validate_password_strength(new_password)
+            
+            if not is_valid:
+                return Response(
+                    {
+                        "error": "Password does not meet security requirements",
+                        "password_requirements": errors
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
             user.set_password(new_password)
             user.save()
             return Response(

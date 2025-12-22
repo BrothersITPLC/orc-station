@@ -1,5 +1,3 @@
-# utils.py
-
 import os
 import secrets
 import string
@@ -7,7 +5,6 @@ import threading
 from datetime import datetime
 from uuid import uuid4
 
-from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.urls import reverse

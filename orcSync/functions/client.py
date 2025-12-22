@@ -52,7 +52,6 @@ class CentralAPIClient:
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            print(f"Error fetching pending changes: {e}")
             return None
 
     def push_changes(self, changes_payload):
@@ -70,7 +69,6 @@ class CentralAPIClient:
             response.raise_for_status()
             return True, response.json()
         except requests.RequestException as e:
-            print(f"Error pushing changes: {e}")
             return False, str(e)
 
     def acknowledge_changes(self, event_ids):
@@ -89,5 +87,4 @@ class CentralAPIClient:
             response.raise_for_status()
             return True, response.json()
         except requests.RequestException as e:
-            print(f"Error acknowledging changes: {e}")
             return False, str(e)
