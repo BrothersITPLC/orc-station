@@ -147,7 +147,7 @@ class CheckinWithoutTruckView(views.APIView):
                 float(net_weight) if "." in str(net_weight) else int(net_weight)
             )
             status_value = "unpaid" if net_weight > 0 else "pass"
-            exporter = Exporter.objects.filter(unique_id=uid).first()
+            exporter = Exporter.objects.filter(phone_number=uid).first()
             if not exporter:
                 return Response(
                     {"error": "TaxPayer with this  id is  not found"},

@@ -74,7 +74,18 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 WSGI_APPLICATION = "InsaBackednLatest.wsgi.application"
 CORS_ALLOW_CREDENTIALS = os.environ.get("CORS_ALLOW_CREDENTIALS") == "True"
-CORS_ALLOW_HEADERS = os.environ.get("CORS_ALLOW_HEADERS", "").split(",")
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "x-api-key",
+]
 ALLOWED_HOSTS.append("*")
 CORS_ALLOW_METHODS = os.environ.get("CORS_ALLOW_METHODS", "").split(",")
 
@@ -150,7 +161,10 @@ EXTERNAL_URI_WEIGHT_BRIDGE = os.environ.get("EXTERNAL_URI_WEIGHT_BRIDGE")
 STATIC_URL = "/static/"
 # CORS and CSRF settings
 CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
+
+print(CORS_ALLOWED_ORIGINS)
 CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
+CORS_ALLOW_CREDENTIALS = True
 
 # Media settings
 MEDIA_ROOT = os.environ.get("MEDIA_ROOT", "/app/media")
@@ -162,6 +176,19 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
+CELERY_TASK_ROUTES = {
+    "orcSync.tasks.main_sync.run_sync_task": {"queue": "sync_queue"},
+    "orcSync.tasks.*": {"queue": "sync_queue"},
+    # keep defaults for others (if you have other tasks, route them to 'default')
+}
+
+
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+# requeue tasks if worker dies
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+
+# make sure always_eager is False in production
+CELERY_TASK_ALWAYS_EAGER = False
 
 SYNCHRONIZABLE_MODELS = [
     "drivers.Driver",
