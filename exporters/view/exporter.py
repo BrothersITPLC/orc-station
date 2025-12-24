@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import filters, status, viewsets
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -14,11 +14,11 @@ from ..models import Exporter
 class ExporterViewSet(viewsets.ModelViewSet):
     """
     A viewset for managing exporters.
-    
+
     Provides CRUD operations for Exporter entities with search functionality.
     Includes TIN number validation (must be exactly 10 digits).
     """
-    
+
     queryset = Exporter.objects.all()
     serializer_class = ExporterSerializer
     permission_classes = [GroupPermission]
@@ -65,8 +65,12 @@ class ExporterViewSet(viewsets.ModelViewSet):
         ],
         responses={
             200: ExporterSerializer(many=True),
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to view exporters"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to view exporters"
+            },
         },
         examples=[
             OpenApiExample(
@@ -90,18 +94,12 @@ class ExporterViewSet(viewsets.ModelViewSet):
                             "phone_number": "+251911223344",
                             "tin_number": "1234567890",
                             "license_number": "EXP001",
-                            "register_by": {
-                                "id": 1,
-                                "username": "admin"
-                            },
-                            "register_place": {
-                                "id": 1,
-                                "name": "Main Office"
-                            },
+                            "register_by": {"id": 1, "username": "admin"},
+                            "register_place": {"id": 1, "name": "Main Office"},
                             "created_at": "2024-01-15T10:30:00Z",
-                            "updated_at": "2024-01-15T10:30:00Z"
+                            "updated_at": "2024-01-15T10:30:00Z",
                         }
-                    ]
+                    ],
                 },
                 response_only=True,
             ),
@@ -117,9 +115,15 @@ class ExporterViewSet(viewsets.ModelViewSet):
         request=ExporterSerializer,
         responses={
             201: ExporterSerializer,
-            400: {"description": "Bad Request - Invalid data provided, duplicate values, or TIN number validation failed"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to create exporters"},
+            400: {
+                "description": "Bad Request - Invalid data provided, duplicate values, or TIN number validation failed"
+            },
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to create exporters"
+            },
         },
         examples=[
             OpenApiExample(
@@ -135,7 +139,7 @@ class ExporterViewSet(viewsets.ModelViewSet):
                     "kebele": "03",
                     "phone_number": "+251911223344",
                     "tin_number": "1234567890",
-                    "license_number": "EXP001"
+                    "license_number": "EXP001",
                 },
                 request_only=True,
             ),
@@ -146,7 +150,7 @@ class ExporterViewSet(viewsets.ModelViewSet):
                     "last_name": "Tadesse",
                     "gender": "Female",
                     "woreda": 1,
-                    "phone_number": "+251911223344"
+                    "phone_number": "+251911223344",
                 },
                 request_only=True,
             ),
@@ -166,25 +170,17 @@ class ExporterViewSet(viewsets.ModelViewSet):
                     "phone_number": "+251911223344",
                     "tin_number": "1234567890",
                     "license_number": "EXP001",
-                    "register_by": {
-                        "id": 1,
-                        "username": "admin"
-                    },
-                    "register_place": {
-                        "id": 1,
-                        "name": "Main Office"
-                    },
+                    "register_by": {"id": 1, "username": "admin"},
+                    "register_place": {"id": 1, "name": "Main Office"},
                     "created_at": "2024-01-15T10:30:00Z",
-                    "updated_at": "2024-01-15T10:30:00Z"
+                    "updated_at": "2024-01-15T10:30:00Z",
                 },
                 response_only=True,
                 status_codes=["201"],
             ),
             OpenApiExample(
                 "Validation Error - Invalid TIN",
-                value={
-                    "tin_number": ["TIN number must be exactly 10 digits."]
-                },
+                value={"tin_number": ["TIN number must be exactly 10 digits."]},
                 response_only=True,
                 status_codes=["400"],
             ),
@@ -199,9 +195,15 @@ class ExporterViewSet(viewsets.ModelViewSet):
         tags=["Exporters"],
         responses={
             200: ExporterSerializer,
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to view this exporter"},
-            404: {"description": "Not Found - Exporter with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to view this exporter"
+            },
+            404: {
+                "description": "Not Found - Exporter with the specified ID does not exist"
+            },
         },
         examples=[
             OpenApiExample(
@@ -220,16 +222,10 @@ class ExporterViewSet(viewsets.ModelViewSet):
                     "phone_number": "+251911223344",
                     "tin_number": "1234567890",
                     "license_number": "EXP001",
-                    "register_by": {
-                        "id": 1,
-                        "username": "admin"
-                    },
-                    "register_place": {
-                        "id": 1,
-                        "name": "Main Office"
-                    },
+                    "register_by": {"id": 1, "username": "admin"},
+                    "register_place": {"id": 1, "name": "Main Office"},
                     "created_at": "2024-01-15T10:30:00Z",
-                    "updated_at": "2024-01-15T10:30:00Z"
+                    "updated_at": "2024-01-15T10:30:00Z",
                 },
                 response_only=True,
             ),
@@ -245,10 +241,18 @@ class ExporterViewSet(viewsets.ModelViewSet):
         request=ExporterSerializer,
         responses={
             200: ExporterSerializer,
-            400: {"description": "Bad Request - Invalid data provided or TIN validation failed"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to update this exporter"},
-            404: {"description": "Not Found - Exporter with the specified ID does not exist"},
+            400: {
+                "description": "Bad Request - Invalid data provided or TIN validation failed"
+            },
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to update this exporter"
+            },
+            404: {
+                "description": "Not Found - Exporter with the specified ID does not exist"
+            },
         },
         examples=[
             OpenApiExample(
@@ -264,7 +268,7 @@ class ExporterViewSet(viewsets.ModelViewSet):
                     "kebele": "03",
                     "phone_number": "+251911223344",
                     "tin_number": "9876543210",
-                    "license_number": "EXP001"
+                    "license_number": "EXP001",
                 },
                 request_only=True,
             ),
@@ -280,33 +284,33 @@ class ExporterViewSet(viewsets.ModelViewSet):
         request=ExporterSerializer,
         responses={
             200: ExporterSerializer,
-            400: {"description": "Bad Request - Invalid data provided or TIN validation failed"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to update this exporter"},
-            404: {"description": "Not Found - Exporter with the specified ID does not exist"},
+            400: {
+                "description": "Bad Request - Invalid data provided or TIN validation failed"
+            },
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to update this exporter"
+            },
+            404: {
+                "description": "Not Found - Exporter with the specified ID does not exist"
+            },
         },
         examples=[
             OpenApiExample(
                 "Partial Update - Phone Number",
-                value={
-                    "phone_number": "+251922334455"
-                },
+                value={"phone_number": "+251922334455"},
                 request_only=True,
             ),
             OpenApiExample(
                 "Partial Update - TIN Number",
-                value={
-                    "tin_number": "9876543210"
-                },
+                value={"tin_number": "9876543210"},
                 request_only=True,
             ),
             OpenApiExample(
                 "Partial Update - Multiple Fields",
-                value={
-                    "middle_name": "Bekele",
-                    "kebele": "05",
-                    "type": 2
-                },
+                value={"middle_name": "Bekele", "kebele": "05", "type": 2},
                 request_only=True,
             ),
         ],
@@ -332,9 +336,15 @@ class ExporterViewSet(viewsets.ModelViewSet):
         tags=["Exporters"],
         responses={
             204: {"description": "No Content - Exporter successfully deleted"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to delete this exporter"},
-            404: {"description": "Not Found - Exporter with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to delete this exporter"
+            },
+            404: {
+                "description": "Not Found - Exporter with the specified ID does not exist"
+            },
         },
     )
     def destroy(self, request, *args, **kwargs):
@@ -347,4 +357,8 @@ class ExporterViewSet(viewsets.ModelViewSet):
         )
 
     def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            self.permission_required = None
+            return [permission() for permission in self.permission_classes]
+
         return has_custom_permission(self, "exporter")

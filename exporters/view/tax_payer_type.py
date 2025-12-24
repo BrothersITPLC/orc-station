@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import viewsets
 
 from exporters.serializers import TaxPayerTypeSerializer
@@ -12,10 +12,10 @@ from ..models import TaxPayerType
 class TaxPayerTypeViewSets(viewsets.ModelViewSet):
     """
     A viewset for managing tax payer types.
-    
+
     Provides CRUD operations for TaxPayerType entities.
     """
-    
+
     queryset = TaxPayerType.objects.all()
     serializer_class = TaxPayerTypeSerializer
     permission_classes = [GroupPermission]
@@ -44,8 +44,12 @@ class TaxPayerTypeViewSets(viewsets.ModelViewSet):
         ],
         responses={
             200: TaxPayerTypeSerializer(many=True),
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to view tax payer types"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to view tax payer types"
+            },
         },
         examples=[
             OpenApiExample(
@@ -61,7 +65,7 @@ class TaxPayerTypeViewSets(viewsets.ModelViewSet):
                             "description": "Individual tax payer",
                             "created_by": 1,
                             "created_at": "2024-01-15T10:30:00Z",
-                            "updated_at": "2024-01-15T10:30:00Z"
+                            "updated_at": "2024-01-15T10:30:00Z",
                         },
                         {
                             "id": 2,
@@ -69,7 +73,7 @@ class TaxPayerTypeViewSets(viewsets.ModelViewSet):
                             "description": "Corporate tax payer",
                             "created_by": 1,
                             "created_at": "2024-01-15T11:00:00Z",
-                            "updated_at": "2024-01-15T11:00:00Z"
+                            "updated_at": "2024-01-15T11:00:00Z",
                         },
                         {
                             "id": 3,
@@ -77,9 +81,9 @@ class TaxPayerTypeViewSets(viewsets.ModelViewSet):
                             "description": "Partnership tax payer",
                             "created_by": 1,
                             "created_at": "2024-01-15T11:30:00Z",
-                            "updated_at": "2024-01-15T11:30:00Z"
-                        }
-                    ]
+                            "updated_at": "2024-01-15T11:30:00Z",
+                        },
+                    ],
                 },
                 response_only=True,
             ),
@@ -95,17 +99,20 @@ class TaxPayerTypeViewSets(viewsets.ModelViewSet):
         request=TaxPayerTypeSerializer,
         responses={
             201: TaxPayerTypeSerializer,
-            400: {"description": "Bad Request - Invalid data provided or duplicate name"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to create tax payer types"},
+            400: {
+                "description": "Bad Request - Invalid data provided or duplicate name"
+            },
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to create tax payer types"
+            },
         },
         examples=[
             OpenApiExample(
                 "Create Tax Payer Type Request",
-                value={
-                    "name": "Individual",
-                    "description": "Individual tax payer"
-                },
+                value={"name": "Individual", "description": "Individual tax payer"},
                 request_only=True,
             ),
             OpenApiExample(
@@ -116,7 +123,7 @@ class TaxPayerTypeViewSets(viewsets.ModelViewSet):
                     "description": "Individual tax payer",
                     "created_by": 1,
                     "created_at": "2024-01-15T10:30:00Z",
-                    "updated_at": "2024-01-15T10:30:00Z"
+                    "updated_at": "2024-01-15T10:30:00Z",
                 },
                 response_only=True,
                 status_codes=["201"],
@@ -132,9 +139,15 @@ class TaxPayerTypeViewSets(viewsets.ModelViewSet):
         tags=["Exporters - Tax Payer Types"],
         responses={
             200: TaxPayerTypeSerializer,
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to view this tax payer type"},
-            404: {"description": "Not Found - Tax payer type with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to view this tax payer type"
+            },
+            404: {
+                "description": "Not Found - Tax payer type with the specified ID does not exist"
+            },
         },
         examples=[
             OpenApiExample(
@@ -145,7 +158,7 @@ class TaxPayerTypeViewSets(viewsets.ModelViewSet):
                     "description": "Individual tax payer",
                     "created_by": 1,
                     "created_at": "2024-01-15T10:30:00Z",
-                    "updated_at": "2024-01-15T10:30:00Z"
+                    "updated_at": "2024-01-15T10:30:00Z",
                 },
                 response_only=True,
             ),
@@ -162,16 +175,22 @@ class TaxPayerTypeViewSets(viewsets.ModelViewSet):
         responses={
             200: TaxPayerTypeSerializer,
             400: {"description": "Bad Request - Invalid data provided"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to update this tax payer type"},
-            404: {"description": "Not Found - Tax payer type with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to update this tax payer type"
+            },
+            404: {
+                "description": "Not Found - Tax payer type with the specified ID does not exist"
+            },
         },
         examples=[
             OpenApiExample(
                 "Update Request",
                 value={
                     "name": "Individual",
-                    "description": "Updated description for individual tax payer"
+                    "description": "Updated description for individual tax payer",
                 },
                 request_only=True,
             ),
@@ -188,23 +207,25 @@ class TaxPayerTypeViewSets(viewsets.ModelViewSet):
         responses={
             200: TaxPayerTypeSerializer,
             400: {"description": "Bad Request - Invalid data provided"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to update this tax payer type"},
-            404: {"description": "Not Found - Tax payer type with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to update this tax payer type"
+            },
+            404: {
+                "description": "Not Found - Tax payer type with the specified ID does not exist"
+            },
         },
         examples=[
             OpenApiExample(
                 "Partial Update - Description Only",
-                value={
-                    "description": "Updated description"
-                },
+                value={"description": "Updated description"},
                 request_only=True,
             ),
             OpenApiExample(
                 "Partial Update - Name Only",
-                value={
-                    "name": "Corporate Entity"
-                },
+                value={"name": "Corporate Entity"},
                 request_only=True,
             ),
         ],
@@ -218,13 +239,24 @@ class TaxPayerTypeViewSets(viewsets.ModelViewSet):
         tags=["Exporters - Tax Payer Types"],
         responses={
             204: {"description": "No Content - Tax payer type successfully deleted"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to delete this tax payer type"},
-            404: {"description": "Not Found - Tax payer type with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to delete this tax payer type"
+            },
+            404: {
+                "description": "Not Found - Tax payer type with the specified ID does not exist"
+            },
         },
     )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
     def get_permissions(self):
+
+        if self.action in ["list", "retrieve"]:
+            self.permission_required = None
+            return [permission() for permission in self.permission_classes]
+
         return has_custom_permission(self, "taxpayertype")

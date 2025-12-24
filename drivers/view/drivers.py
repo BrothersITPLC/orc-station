@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import filters, viewsets
 
 from drivers.serializers import DriverSerializer
@@ -12,10 +12,10 @@ from ..models import Driver
 class DriverViewSet(viewsets.ModelViewSet):
     """
     A viewset for managing drivers.
-    
+
     Provides CRUD operations for Driver entities with search functionality.
     """
-    
+
     queryset = Driver.objects.all()
     serializer_class = DriverSerializer
     permission_classes = [GroupPermission]
@@ -59,8 +59,12 @@ class DriverViewSet(viewsets.ModelViewSet):
         ],
         responses={
             200: DriverSerializer(many=True),
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to view drivers"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to view drivers"
+            },
         },
         examples=[
             OpenApiExample(
@@ -79,18 +83,12 @@ class DriverViewSet(viewsets.ModelViewSet):
                             "license_number": "DL123456",
                             "woreda": 1,
                             "kebele": "05",
-                            "register_by": {
-                                "id": 1,
-                                "username": "admin"
-                            },
-                            "register_place": {
-                                "id": 1,
-                                "name": "Main Office"
-                            },
+                            "register_by": {"id": 1, "username": "admin"},
+                            "register_place": {"id": 1, "name": "Main Office"},
                             "created_at": "2024-01-15T10:30:00Z",
-                            "updated_at": "2024-01-15T10:30:00Z"
+                            "updated_at": "2024-01-15T10:30:00Z",
                         }
-                    ]
+                    ],
                 },
                 response_only=True,
             ),
@@ -106,9 +104,15 @@ class DriverViewSet(viewsets.ModelViewSet):
         request=DriverSerializer,
         responses={
             201: DriverSerializer,
-            400: {"description": "Bad Request - Invalid data provided or duplicate license number"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to create drivers"},
+            400: {
+                "description": "Bad Request - Invalid data provided or duplicate license number"
+            },
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to create drivers"
+            },
         },
         examples=[
             OpenApiExample(
@@ -120,7 +124,7 @@ class DriverViewSet(viewsets.ModelViewSet):
                     "phone_number": "+251911234567",
                     "license_number": "DL123456",
                     "woreda": 1,
-                    "kebele": "05"
+                    "kebele": "05",
                 },
                 request_only=True,
             ),
@@ -135,16 +139,10 @@ class DriverViewSet(viewsets.ModelViewSet):
                     "license_number": "DL123456",
                     "woreda": 1,
                     "kebele": "05",
-                    "register_by": {
-                        "id": 1,
-                        "username": "admin"
-                    },
-                    "register_place": {
-                        "id": 1,
-                        "name": "Main Office"
-                    },
+                    "register_by": {"id": 1, "username": "admin"},
+                    "register_place": {"id": 1, "name": "Main Office"},
                     "created_at": "2024-01-15T10:30:00Z",
-                    "updated_at": "2024-01-15T10:30:00Z"
+                    "updated_at": "2024-01-15T10:30:00Z",
                 },
                 response_only=True,
                 status_codes=["201"],
@@ -160,9 +158,15 @@ class DriverViewSet(viewsets.ModelViewSet):
         tags=["Drivers"],
         responses={
             200: DriverSerializer,
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to view this driver"},
-            404: {"description": "Not Found - Driver with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to view this driver"
+            },
+            404: {
+                "description": "Not Found - Driver with the specified ID does not exist"
+            },
         },
         examples=[
             OpenApiExample(
@@ -176,16 +180,10 @@ class DriverViewSet(viewsets.ModelViewSet):
                     "license_number": "DL123456",
                     "woreda": 1,
                     "kebele": "05",
-                    "register_by": {
-                        "id": 1,
-                        "username": "admin"
-                    },
-                    "register_place": {
-                        "id": 1,
-                        "name": "Main Office"
-                    },
+                    "register_by": {"id": 1, "username": "admin"},
+                    "register_place": {"id": 1, "name": "Main Office"},
                     "created_at": "2024-01-15T10:30:00Z",
-                    "updated_at": "2024-01-15T10:30:00Z"
+                    "updated_at": "2024-01-15T10:30:00Z",
                 },
                 response_only=True,
             ),
@@ -202,9 +200,15 @@ class DriverViewSet(viewsets.ModelViewSet):
         responses={
             200: DriverSerializer,
             400: {"description": "Bad Request - Invalid data provided"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to update this driver"},
-            404: {"description": "Not Found - Driver with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to update this driver"
+            },
+            404: {
+                "description": "Not Found - Driver with the specified ID does not exist"
+            },
         },
         examples=[
             OpenApiExample(
@@ -216,7 +220,7 @@ class DriverViewSet(viewsets.ModelViewSet):
                     "phone_number": "+251911234567",
                     "license_number": "DL123456",
                     "woreda": 1,
-                    "kebele": "05"
+                    "kebele": "05",
                 },
                 request_only=True,
             ),
@@ -233,23 +237,25 @@ class DriverViewSet(viewsets.ModelViewSet):
         responses={
             200: DriverSerializer,
             400: {"description": "Bad Request - Invalid data provided"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to update this driver"},
-            404: {"description": "Not Found - Driver with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to update this driver"
+            },
+            404: {
+                "description": "Not Found - Driver with the specified ID does not exist"
+            },
         },
         examples=[
             OpenApiExample(
                 "Partial Update - Phone Number",
-                value={
-                    "phone_number": "+251922334455"
-                },
+                value={"phone_number": "+251922334455"},
                 request_only=True,
             ),
             OpenApiExample(
                 "Partial Update - Email",
-                value={
-                    "email": "new.email@example.com"
-                },
+                value={"email": "new.email@example.com"},
                 request_only=True,
             ),
         ],
@@ -263,9 +269,15 @@ class DriverViewSet(viewsets.ModelViewSet):
         tags=["Drivers"],
         responses={
             204: {"description": "No Content - Driver successfully deleted"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to delete this driver"},
-            404: {"description": "Not Found - Driver with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to delete this driver"
+            },
+            404: {
+                "description": "Not Found - Driver with the specified ID does not exist"
+            },
         },
     )
     def destroy(self, request, *args, **kwargs):
@@ -280,4 +292,8 @@ class DriverViewSet(viewsets.ModelViewSet):
         )
 
     def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            self.permission_required = None
+            return [permission() for permission in self.permission_classes]
+
         return has_custom_permission(self, "driver")

@@ -1,16 +1,17 @@
 from drf_spectacular.utils import extend_schema
-from rest_framework import viewsets,permissions
-from users.serializers import DepartmentSerializer
+from rest_framework import permissions, viewsets
+
 from users.models import Department
+from users.serializers import DepartmentSerializer
+
 
 class DepartmentViewSet(viewsets.ModelViewSet):
     """
     A viewset for managing departments.
-    
+
     Provides CRUD operations for Department entities.
     """
-    
-    permission_classes = [permissions.AllowAny]
+
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
 

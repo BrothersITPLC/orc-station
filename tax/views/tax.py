@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
@@ -13,11 +13,11 @@ from ..models import Tax
 class TaxViewSet(viewsets.ModelViewSet):
     """
     A viewset for managing tax configurations.
-    
+
     Provides CRUD operations for Tax entities. Each tax is uniquely identified by
     the combination of station, tax payer type, and commodity.
     """
-    
+
     queryset = Tax.objects.all()
     serializer_class = TaxSerializer
     permission_classes = [IsAuthenticated, GroupPermission]
@@ -46,8 +46,12 @@ class TaxViewSet(viewsets.ModelViewSet):
         ],
         responses={
             200: TaxSerializer(many=True),
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to view taxes"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to view taxes"
+            },
         },
         examples=[
             OpenApiExample(
@@ -66,7 +70,7 @@ class TaxViewSet(viewsets.ModelViewSet):
                             "percentage": "5.50",
                             "created_by": 1,
                             "created_at": "2024-01-15T10:30:00Z",
-                            "updated_at": "2024-01-15T10:30:00Z"
+                            "updated_at": "2024-01-15T10:30:00Z",
                         },
                         {
                             "id": 2,
@@ -77,9 +81,9 @@ class TaxViewSet(viewsets.ModelViewSet):
                             "percentage": "3.25",
                             "created_by": 1,
                             "created_at": "2024-01-15T11:00:00Z",
-                            "updated_at": "2024-01-15T11:00:00Z"
-                        }
-                    ]
+                            "updated_at": "2024-01-15T11:00:00Z",
+                        },
+                    ],
                 },
                 response_only=True,
             ),
@@ -95,9 +99,15 @@ class TaxViewSet(viewsets.ModelViewSet):
         request=TaxSerializer,
         responses={
             201: TaxSerializer,
-            400: {"description": "Bad Request - Invalid data provided or duplicate combination"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to create taxes"},
+            400: {
+                "description": "Bad Request - Invalid data provided or duplicate combination"
+            },
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to create taxes"
+            },
         },
         examples=[
             OpenApiExample(
@@ -107,7 +117,7 @@ class TaxViewSet(viewsets.ModelViewSet):
                     "station": 1,
                     "tax_payer_type": 1,
                     "commodity": 1,
-                    "percentage": "5.50"
+                    "percentage": "5.50",
                 },
                 request_only=True,
             ),
@@ -122,7 +132,7 @@ class TaxViewSet(viewsets.ModelViewSet):
                     "percentage": "5.50",
                     "created_by": 1,
                     "created_at": "2024-01-15T10:30:00Z",
-                    "updated_at": "2024-01-15T10:30:00Z"
+                    "updated_at": "2024-01-15T10:30:00Z",
                 },
                 response_only=True,
                 status_codes=["201"],
@@ -130,7 +140,9 @@ class TaxViewSet(viewsets.ModelViewSet):
             OpenApiExample(
                 "Validation Error - Duplicate",
                 value={
-                    "non_field_errors": ["The fields station, tax_payer_type, commodity must make a unique set."]
+                    "non_field_errors": [
+                        "The fields station, tax_payer_type, commodity must make a unique set."
+                    ]
                 },
                 response_only=True,
                 status_codes=["400"],
@@ -146,9 +158,15 @@ class TaxViewSet(viewsets.ModelViewSet):
         tags=["Tax"],
         responses={
             200: TaxSerializer,
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to view this tax"},
-            404: {"description": "Not Found - Tax with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to view this tax"
+            },
+            404: {
+                "description": "Not Found - Tax with the specified ID does not exist"
+            },
         },
         examples=[
             OpenApiExample(
@@ -162,7 +180,7 @@ class TaxViewSet(viewsets.ModelViewSet):
                     "percentage": "5.50",
                     "created_by": 1,
                     "created_at": "2024-01-15T10:30:00Z",
-                    "updated_at": "2024-01-15T10:30:00Z"
+                    "updated_at": "2024-01-15T10:30:00Z",
                 },
                 response_only=True,
             ),
@@ -179,9 +197,15 @@ class TaxViewSet(viewsets.ModelViewSet):
         responses={
             200: TaxSerializer,
             400: {"description": "Bad Request - Invalid data provided"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to update this tax"},
-            404: {"description": "Not Found - Tax with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to update this tax"
+            },
+            404: {
+                "description": "Not Found - Tax with the specified ID does not exist"
+            },
         },
         examples=[
             OpenApiExample(
@@ -191,7 +215,7 @@ class TaxViewSet(viewsets.ModelViewSet):
                     "station": 1,
                     "tax_payer_type": 1,
                     "commodity": 1,
-                    "percentage": "6.00"
+                    "percentage": "6.00",
                 },
                 request_only=True,
             ),
@@ -208,24 +232,25 @@ class TaxViewSet(viewsets.ModelViewSet):
         responses={
             200: TaxSerializer,
             400: {"description": "Bad Request - Invalid data provided"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to update this tax"},
-            404: {"description": "Not Found - Tax with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to update this tax"
+            },
+            404: {
+                "description": "Not Found - Tax with the specified ID does not exist"
+            },
         },
         examples=[
             OpenApiExample(
                 "Partial Update - Percentage Only",
-                value={
-                    "percentage": "7.25"
-                },
+                value={"percentage": "7.25"},
                 request_only=True,
             ),
             OpenApiExample(
                 "Partial Update - Name and Percentage",
-                value={
-                    "name": "Updated Tax Name",
-                    "percentage": "4.50"
-                },
+                value={"name": "Updated Tax Name", "percentage": "4.50"},
                 request_only=True,
             ),
         ],
@@ -239,15 +264,25 @@ class TaxViewSet(viewsets.ModelViewSet):
         tags=["Tax"],
         responses={
             204: {"description": "No Content - Tax successfully deleted"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to delete this tax"},
-            404: {"description": "Not Found - Tax with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to delete this tax"
+            },
+            404: {
+                "description": "Not Found - Tax with the specified ID does not exist"
+            },
         },
     )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
     def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            self.permission_required = None
+            return [permission() for permission in self.permission_classes]
+
         return has_custom_permission(self, "tax")
 
     def perform_create(self, serializer):

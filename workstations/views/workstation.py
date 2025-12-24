@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -14,11 +14,11 @@ from ..models import WorkStation
 class WorkStationViewSet(viewsets.ModelViewSet):
     """
     A viewset for managing workstations.
-    
+
     Provides CRUD operations for WorkStation entities with search functionality
     and custom actions for position management.
     """
-    
+
     queryset = WorkStation.objects.all()
     serializer_class = WorkStationSerializer
     permission_classes = [GroupPermission]
@@ -56,8 +56,12 @@ class WorkStationViewSet(viewsets.ModelViewSet):
         ],
         responses={
             200: WorkStationSerializer(many=True),
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to view workstations"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to view workstations"
+            },
         },
         examples=[
             OpenApiExample(
@@ -75,7 +79,7 @@ class WorkStationViewSet(viewsets.ModelViewSet):
                             "kebele": "01",
                             "managed_by": 1,
                             "created_at": "2024-01-15T10:30:00Z",
-                            "updated_at": "2024-01-15T10:30:00Z"
+                            "updated_at": "2024-01-15T10:30:00Z",
                         },
                         {
                             "id": 2,
@@ -85,9 +89,9 @@ class WorkStationViewSet(viewsets.ModelViewSet):
                             "kebele": "03",
                             "managed_by": 2,
                             "created_at": "2024-01-15T11:00:00Z",
-                            "updated_at": "2024-01-15T11:00:00Z"
-                        }
-                    ]
+                            "updated_at": "2024-01-15T11:00:00Z",
+                        },
+                    ],
                 },
                 response_only=True,
             ),
@@ -103,9 +107,15 @@ class WorkStationViewSet(viewsets.ModelViewSet):
         request=WorkStationSerializer,
         responses={
             201: WorkStationSerializer,
-            400: {"description": "Bad Request - Invalid data provided or duplicate name/machine number"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to create workstations"},
+            400: {
+                "description": "Bad Request - Invalid data provided or duplicate name/machine number"
+            },
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to create workstations"
+            },
         },
         examples=[
             OpenApiExample(
@@ -114,7 +124,7 @@ class WorkStationViewSet(viewsets.ModelViewSet):
                     "name": "Main Office",
                     "machine_number": "WS001",
                     "woreda": 1,
-                    "kebele": "01"
+                    "kebele": "01",
                 },
                 request_only=True,
             ),
@@ -128,7 +138,7 @@ class WorkStationViewSet(viewsets.ModelViewSet):
                     "kebele": "01",
                     "managed_by": 1,
                     "created_at": "2024-01-15T10:30:00Z",
-                    "updated_at": "2024-01-15T10:30:00Z"
+                    "updated_at": "2024-01-15T10:30:00Z",
                 },
                 response_only=True,
                 status_codes=["201"],
@@ -144,9 +154,15 @@ class WorkStationViewSet(viewsets.ModelViewSet):
         tags=["Workstations"],
         responses={
             200: WorkStationSerializer,
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to view this workstation"},
-            404: {"description": "Not Found - Workstation with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to view this workstation"
+            },
+            404: {
+                "description": "Not Found - Workstation with the specified ID does not exist"
+            },
         },
         examples=[
             OpenApiExample(
@@ -159,7 +175,7 @@ class WorkStationViewSet(viewsets.ModelViewSet):
                     "kebele": "01",
                     "managed_by": 1,
                     "created_at": "2024-01-15T10:30:00Z",
-                    "updated_at": "2024-01-15T10:30:00Z"
+                    "updated_at": "2024-01-15T10:30:00Z",
                 },
                 response_only=True,
             ),
@@ -176,9 +192,15 @@ class WorkStationViewSet(viewsets.ModelViewSet):
         responses={
             200: WorkStationSerializer,
             400: {"description": "Bad Request - Invalid data provided"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to update this workstation"},
-            404: {"description": "Not Found - Workstation with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to update this workstation"
+            },
+            404: {
+                "description": "Not Found - Workstation with the specified ID does not exist"
+            },
         },
         examples=[
             OpenApiExample(
@@ -187,7 +209,7 @@ class WorkStationViewSet(viewsets.ModelViewSet):
                     "name": "Main Office - Updated",
                     "machine_number": "WS001",
                     "woreda": 1,
-                    "kebele": "01"
+                    "kebele": "01",
                 },
                 request_only=True,
             ),
@@ -204,23 +226,25 @@ class WorkStationViewSet(viewsets.ModelViewSet):
         responses={
             200: WorkStationSerializer,
             400: {"description": "Bad Request - Invalid data provided"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to update this workstation"},
-            404: {"description": "Not Found - Workstation with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to update this workstation"
+            },
+            404: {
+                "description": "Not Found - Workstation with the specified ID does not exist"
+            },
         },
         examples=[
             OpenApiExample(
                 "Partial Update - Name Only",
-                value={
-                    "name": "Updated Office Name"
-                },
+                value={"name": "Updated Office Name"},
                 request_only=True,
             ),
             OpenApiExample(
                 "Partial Update - Kebele Only",
-                value={
-                    "kebele": "05"
-                },
+                value={"kebele": "05"},
                 request_only=True,
             ),
         ],
@@ -234,9 +258,15 @@ class WorkStationViewSet(viewsets.ModelViewSet):
         tags=["Workstations"],
         responses={
             204: {"description": "No Content - Workstation successfully deleted"},
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to delete this workstation"},
-            404: {"description": "Not Found - Workstation with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to delete this workstation"
+            },
+            404: {
+                "description": "Not Found - Workstation with the specified ID does not exist"
+            },
         },
     )
     def destroy(self, request, *args, **kwargs):
@@ -252,13 +282,15 @@ class WorkStationViewSet(viewsets.ModelViewSet):
                 "name": {"type": "string"},
                 "machine_id": {"type": "string"},
                 "location": {"type": "string"},
-                "position": {"type": "integer"}
+                "position": {"type": "integer"},
             },
-            "required": ["name", "location", "position"]
+            "required": ["name", "location", "position"],
         },
         responses={
             201: WorkStationSerializer,
-            400: {"description": "Bad Request - Name, location, and position are required"},
+            400: {
+                "description": "Bad Request - Name, location, and position are required"
+            },
         },
         examples=[
             OpenApiExample(
@@ -267,7 +299,7 @@ class WorkStationViewSet(viewsets.ModelViewSet):
                     "name": "Border Station",
                     "machine_id": "WS003",
                     "location": "North Border",
-                    "position": 1
+                    "position": 1,
                 },
                 request_only=True,
             ),
@@ -298,11 +330,8 @@ class WorkStationViewSet(viewsets.ModelViewSet):
         tags=["Workstations"],
         request={
             "type": "object",
-            "properties": {
-                "id1": {"type": "integer"},
-                "id2": {"type": "integer"}
-            },
-            "required": ["id1", "id2"]
+            "properties": {"id1": {"type": "integer"}, "id2": {"type": "integer"}},
+            "required": ["id1", "id2"],
         },
         responses={
             200: {"description": "Positions swapped successfully"},
@@ -311,17 +340,12 @@ class WorkStationViewSet(viewsets.ModelViewSet):
         examples=[
             OpenApiExample(
                 "Swap Positions Request",
-                value={
-                    "id1": 1,
-                    "id2": 2
-                },
+                value={"id1": 1, "id2": 2},
                 request_only=True,
             ),
             OpenApiExample(
                 "Swap Positions Response",
-                value={
-                    "message": "Positions swapped successfully"
-                },
+                value={"message": "Positions swapped successfully"},
                 response_only=True,
             ),
         ],
@@ -346,4 +370,8 @@ class WorkStationViewSet(viewsets.ModelViewSet):
         serializer.save(managed_by=self.request.user)
 
     def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            self.permission_required = None
+            return [permission() for permission in self.permission_classes]
+
         return has_custom_permission(self, "workstation")

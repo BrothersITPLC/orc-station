@@ -2,6 +2,8 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 
 from declaracions.serializers import PaymentMethodSerializer
+from helper.permission import has_custom_permission
+from users.views.permissions import GroupPermission
 
 from ..models import PaymentMethod
 
@@ -9,12 +11,13 @@ from ..models import PaymentMethod
 class PaymentMethodViewSet(viewsets.ModelViewSet):
     """
     A viewset for managing payment methods.
-    
+
     Provides CRUD operations for PaymentMethod entities.
     """
-    
+
     queryset = PaymentMethod.objects.all()
     serializer_class = PaymentMethodSerializer
+    permission_classes = [GroupPermission]
 
     @extend_schema(
         summary="List all payment methods",
@@ -91,3 +94,11 @@ class PaymentMethodViewSet(viewsets.ModelViewSet):
     )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
+
+    def get_permissions(self):
+
+        if self.action in ["list", "retrieve"]:
+            self.permission_required = None
+            return [permission() for permission in self.permission_classes]
+
+        return has_custom_permission(self, "paymentmethod")

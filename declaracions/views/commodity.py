@@ -13,10 +13,10 @@ from ..models import Commodity
 class CommodityViewSet(viewsets.ModelViewSet):
     """
     A viewset for managing commodities.
-    
+
     Provides CRUD operations for Commodity entities with permission-based access control.
     """
-    
+
     queryset = Commodity.objects.all()
     serializer_class = CommoditySerializer
     permission_classes = [GroupPermission]
@@ -24,6 +24,10 @@ class CommodityViewSet(viewsets.ModelViewSet):
     pagination_class = CustomLimitOffsetPagination
 
     def get_permissions(self):
+
+        if self.action in ["list", "retrieve"]:
+            self.permission_required = None
+            return [permission() for permission in self.permission_classes]
 
         return has_custom_permission(self, "commodity")
 
