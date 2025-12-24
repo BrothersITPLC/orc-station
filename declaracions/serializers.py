@@ -1,5 +1,3 @@
-# declarations/serializers.py
-
 from rest_framework import serializers
 
 from drivers.models import Driver

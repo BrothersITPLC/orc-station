@@ -111,20 +111,15 @@ def admin_each_station_total_weight_report(request):
     # station_weights_map: { "Station Name": Decimal(0) }
     station_weights_map = {station.name: Decimal(0) for station in all_stations}
 
-    # 4. Perform database aggregation: sum incremental_weight per station
-    # The intermediate 'categories' logic (weekly, monthly, yearly) is not needed
-    # for the final output which is just a sum per station.
-    # We can directly sum `incremental_weight` grouped by station.
-    aggregated_weights = (
-        checkins_with_weight.values("station__name")
-        .annotate(total_station_weight=Coalesce(Sum("incremental_weight"), Decimal(0)))
-        .order_by("station__name")
-    )
-
-    for item in aggregated_weights:
-        station_name = item["station__name"]
-        if station_name in station_weights_map:  # Defensive check
-            station_weights_map[station_name] = item["total_station_weight"]
+    # 4. Perform aggregation in Python
+    # Sum incremental_weight manually
+    for checkin in checkins_with_weight:
+        # incremental_weight is annotated by annotate_revenue_on_checkins
+        weight = checkin.incremental_weight or Decimal(0)
+        if checkin.station:
+            s_name = checkin.station.name
+            if s_name in station_weights_map:
+                station_weights_map[s_name] += weight
 
     # 5. Build the final `data` list, ensuring it matches the order of `labels`
     data_list = [

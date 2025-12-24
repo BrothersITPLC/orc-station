@@ -77,13 +77,12 @@ def monthly_revenue_report(request):
     # 3. Annotate check-ins with incremental weight and revenue using the helper function
     checkins_with_revenue = annotate_revenue_on_checkins(base_checkins_query)
 
-    # 4. Aggregate revenue by day of the month directly in the database
-    daily_revenue_aggregates = (
-        checkins_with_revenue.annotate(day_of_month=ExtractDay("checkin_time"))
-        .values("day_of_month")
-        .annotate(total_daily_revenue=Coalesce(Sum("revenue"), Decimal(0)))
-        .order_by("day_of_month")
-    )
+    # 4. Aggregate revenue by day of the month using Python
+    # checkins_with_revenue is annotated with 'revenue'. 
+    # Use ExtractDay just for extracting the specific field, but no Sum.
+    checkins_with_revenue = checkins_with_revenue.annotate(day_of_month=ExtractDay("checkin_time"))
+
+    # We will iterate and fill revenue_by_day_dict later.
 
     # Prepare labels and data, ensuring all days in the range are represented
     # even if they have no revenue.
@@ -100,10 +99,11 @@ def monthly_revenue_report(request):
         day: Decimal(0) for day in sorted(list(set(all_days_in_range)))
     }
 
-    for item in daily_revenue_aggregates:
-        day = item["day_of_month"]
-        if day in revenue_by_day_dict:  # Defensive check
-            revenue_by_day_dict[day] = item["total_daily_revenue"]
+    for checkin in checkins_with_revenue:
+        day = checkin.day_of_month
+        rev = checkin.revenue or Decimal(0)
+        if day in revenue_by_day_dict:
+            revenue_by_day_dict[day] += rev
 
     labels = [f"{day:02}" for day in sorted(revenue_by_day_dict.keys())]
     data = [

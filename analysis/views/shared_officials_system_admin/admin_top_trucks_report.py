@@ -105,30 +105,56 @@ def admin_top_trucks_report(request):
     # 3. Annotate check-ins with incremental weight and revenue using the helper
     checkins_with_revenue = annotate_revenue_on_checkins(base_checkins_query)
 
-    # 4. Aggregate data for top trucks directly at the database level
-    # This replaces the entire manual 'calculate_total_weight' function and its loop.
-    truck_stats = (
-        checkins_with_revenue.values(
-            "declaracion__truck__id",  # Group by truck ID
-            "declaracion__truck__plate_number",
-            "declaracion__truck__truck_brand",
-            "declaracion__truck__owner__first_name",
-            "declaracion__truck__owner__last_name",
-        )
-        .annotate(
-            total_revenue=Coalesce(Sum("revenue"), Decimal(0)),
-            total_kg=Coalesce(Sum("incremental_weight"), Decimal(0)),
-            total_checkins=Coalesce(
-                Count("id"), 0
-            ),  # Count of all relevant check-ins for the truck
-            path_count=Coalesce(
-                Count("declaracion_id", distinct=True), 0
-            ),  # Count of unique declarations (paths)
-        )
-        .order_by("-total_checkins", "-path_count")[
-            :10
-        ]  # Order by check-in count then path count, get top 10
-    )
+    # 4. Aggregate data for top trucks using Python
+    # Dictionary to hold truck stats: {truck_id: {stats}}
+    truck_stats_map = {}
+
+    for checkin in checkins_with_revenue:
+        # Resolve truck details from the checkin's declaration
+        # Checkin -> Declaracion -> Truck
+        # Note: base_checkins_filters ensures declaracion and declaracion__truck are not null
+        
+        # Accessing related objects efficiently might require select_related in the query optimization step,
+        # but for now we rely on the queryset. 
+        # Ideally: checkins_with_revenue.select_related('declaracion__truck__owner')
+        
+        decl = checkin.declaracion
+        truck = decl.truck
+        owner = truck.owner if truck else None # Should be present due to filter
+        
+        t_id = truck.id
+        
+        if t_id not in truck_stats_map:
+            truck_stats_map[t_id] = {
+                "declaracion__truck__plate_number": truck.plate_number,
+                "declaracion__truck__truck_brand": truck.truck_brand,
+                "declaracion__truck__owner__first_name": owner.first_name if owner else "",
+                "declaracion__truck__owner__last_name": owner.last_name if owner else "",
+                "total_revenue": Decimal(0),
+                "total_kg": Decimal(0),
+                "total_checkins": 0,
+                "path_set": set() # track unique declaracion_ids
+            }
+        
+        rev = checkin.revenue or Decimal(0)
+        weight = checkin.incremental_weight or Decimal(0)
+        
+        truck_stats_map[t_id]["total_revenue"] += rev
+        truck_stats_map[t_id]["total_kg"] += weight
+        truck_stats_map[t_id]["total_checkins"] += 1
+        truck_stats_map[t_id]["path_set"].add(decl.id)
+
+    # Convert map to list and sort
+    truck_stats_list = []
+    for t_id, stats in truck_stats_map.items():
+        stats["path_count"] = len(stats["path_set"])
+        truck_stats_list.append(stats)
+        
+    # Sort by checkins (desc), then path_count (desc)
+    truck_stats_list.sort(key=lambda x: (x["total_checkins"], x["path_count"]), reverse=True)
+    
+    # Take top 10
+    truck_stats = truck_stats_list[:10]
 
     # 5. Prepare the report data in the required format
     report_data = []

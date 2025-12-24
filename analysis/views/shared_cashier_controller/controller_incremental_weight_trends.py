@@ -171,20 +171,19 @@ def controller_incremental_weight_trends(request):
             regular_data_map[cat] = Decimal(0)
             walkin_data_map[cat] = Decimal(0)
 
-        aggregated_query = (
-            checkins_with_data.annotate(time_unit=ExtractWeekDay("checkin_time"))
-            .values("time_unit", "taxpayer_type")
-            .annotate(total_weight=Coalesce(Sum("incremental_weight"), Decimal(0)))
-            .order_by("time_unit", "taxpayer_type")
-        )
+        # Fetch annotated data and aggregate in Python to avoid window function issues
+        annotated_rows = checkins_with_data.annotate(
+            time_unit=ExtractWeekDay("checkin_time")
+        ).values("time_unit", "taxpayer_type", "incremental_weight")
 
-        for item in aggregated_query:
+        for item in annotated_rows:
             day_label = db_day_to_category_map.get(item["time_unit"])
             if day_label:
+                weight = item["incremental_weight"] or Decimal(0)
                 if item["taxpayer_type"] == "Regular":
-                    regular_data_map[day_label] += item["total_weight"]
+                    regular_data_map[day_label] += weight
                 elif item["taxpayer_type"] == "Walk-in":
-                    walkin_data_map[day_label] += item["total_weight"]
+                    walkin_data_map[day_label] += weight
 
     elif selected_date_type == "monthly":
         # Calculate week numbers relative to the start_date of the month
@@ -207,27 +206,23 @@ def controller_incremental_weight_trends(request):
             regular_data_map[cat] = Decimal(0)
             walkin_data_map[cat] = Decimal(0)
 
-        aggregated_query = (
-            checkins_with_data.annotate(
-                # Calculate week number relative to the start of the month (1-indexed)
-                week_of_month=((ExtractDay("checkin_time") - 1) // 7)
-                + 1
-            )
-            .values("week_of_month", "taxpayer_type")
-            .annotate(total_weight=Coalesce(Sum("incremental_weight"), Decimal(0)))
-            .order_by("week_of_month", "taxpayer_type")
-        )
+        # Fetch annotated data and aggregate in Python to avoid window function issues
+        annotated_rows = checkins_with_data.annotate(
+            # Calculate week number relative to the start of the month (1-indexed)
+            week_of_month=((ExtractDay("checkin_time") - 1) // 7) + 1
+        ).values("week_of_month", "taxpayer_type", "incremental_weight")
 
-        for item in aggregated_query:
+        for item in annotated_rows:
             week_num = item["week_of_month"]
             week_label = f"Week {week_num}"
             if (
                 week_label in categories
             ):  # Ensure it's a valid week within our defined categories
+                weight = item["incremental_weight"] or Decimal(0)
                 if item["taxpayer_type"] == "Regular":
-                    regular_data_map[week_label] += item["total_weight"]
+                    regular_data_map[week_label] += weight
                 elif item["taxpayer_type"] == "Walk-in":
-                    walkin_data_map[week_label] += item["total_weight"]
+                    walkin_data_map[week_label] += weight
 
     elif selected_date_type == "yearly":
         categories = [month_name[i] for i in range(1, 13)]
@@ -236,20 +231,19 @@ def controller_incremental_weight_trends(request):
             regular_data_map[cat] = Decimal(0)
             walkin_data_map[cat] = Decimal(0)
 
-        aggregated_query = (
-            checkins_with_data.annotate(time_unit=ExtractMonth("checkin_time"))
-            .values("time_unit", "taxpayer_type")
-            .annotate(total_weight=Coalesce(Sum("incremental_weight"), Decimal(0)))
-            .order_by("time_unit", "taxpayer_type")
-        )
+        # Fetch annotated data and aggregate in Python to avoid window function issues
+        annotated_rows = checkins_with_data.annotate(
+            time_unit=ExtractMonth("checkin_time")
+        ).values("time_unit", "taxpayer_type", "incremental_weight")
 
-        for item in aggregated_query:
+        for item in annotated_rows:
             month_label = month_name[item["time_unit"]]  # 1=Jan, 12=Dec
             if month_label:
+                weight = item["incremental_weight"] or Decimal(0)
                 if item["taxpayer_type"] == "Regular":
-                    regular_data_map[month_label] += item["total_weight"]
+                    regular_data_map[month_label] += weight
                 elif item["taxpayer_type"] == "Walk-in":
-                    walkin_data_map[month_label] += item["total_weight"]
+                    walkin_data_map[month_label] += weight
 
     # Build series data, ensuring order matches categories
     regular_series = [

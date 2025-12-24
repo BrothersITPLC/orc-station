@@ -73,6 +73,7 @@ class Exporter(BaseModel):
     license_number = models.CharField(
         max_length=400, unique=True, blank=True, null=True
     )
+
     register_by = models.ForeignKey(
         "users.CustomUser",
         on_delete=models.PROTECT,

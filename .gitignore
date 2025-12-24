@@ -164,3 +164,4 @@ coverage-html/
 .secret
 nginx/
 static/
+thrush/

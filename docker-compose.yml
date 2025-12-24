@@ -1,51 +1,51 @@
 services:
   insadb:
     image: postgres:15
-    container_name: dengego_postgres_primary
-    env_file:
-      - .env
+    container_name: station_${ENV}_postgres
+    env_file: .env
     ports:
-      - "5434:5432"
+      - "${HOST_POSTGRES_PORT:-5432}:5432"
     volumes:
-      - dengego_postgres_data:/var/lib/postgresql/data
+      - station_postgres_data:/var/lib/postgresql/data
     networks:
-      - dengego_orc_net
+      - station_orc_net
     restart: always
+
   redis:
     image: redis:7
-    container_name: dengego_redis
+    container_name: station_${ENV}_redis
     command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
     ports:
-      - "6378:6379"
+      - "${HOST_REDIS_PORT:-6379}:6379"
     volumes:
-      - redis_data:/data
+      - station_redis_data:/data
     networks:
-      - dengego_orc_net
+      - station_orc_net
     restart: always
+
   django_server:
     build: .
-    container_name: dengego_django
-    env_file:
-      - .env
+    container_name: station_${ENV}_django
+    env_file: .env
     volumes:
       - .:/app
       - ./media:/app/media
       - ./staticfiles:/app/staticfiles
       - ./static:/app/static
     ports:
-      - "8002:8000"
+      - "${HOST_DJANGO_PORT:-8000}:8000"
     depends_on:
       - insadb
       - redis
     networks:
-      - dengego_orc_net
+      - station_orc_net
     restart: always
+
   celery_worker:
     build: .
-    container_name: dengego_celery_worker
-    env_file:
-      - .env
-    command: celery -A InsaBackednLatest  worker -l info
+    container_name: station_${ENV}_celery_worker
+    env_file: .env
+    command: celery -A InsaBackednLatest worker -l info --concurrency=2 --max-tasks-per-child=50
     depends_on:
       - redis
       - insadb
@@ -53,13 +53,13 @@ services:
     volumes:
       - .:/app
     networks:
-      - dengego_orc_net
+      - station_orc_net
     restart: always
+
   celery_beat:
     build: .
-    container_name: dengego_celery_beat
-    env_file:
-      - .env
+    container_name: station_${ENV}_celery_beat
+    env_file: .env
     command: >
       sh -c "
       echo 'Waiting for database to be ready...' &&
@@ -77,11 +77,13 @@ services:
     volumes:
       - .:/app
     networks:
-      - dengego_orc_net
+      - station_orc_net
     restart: always
+
 volumes:
-  dengego_postgres_data:
-  redis_data:
+  station_postgres_data:
+  station_redis_data:
+
 networks:
-  dengego_orc_net:
+  station_orc_net:
     external: true

@@ -32,7 +32,6 @@ class CentralAPIClient:
     def _get_headers(self):
         """Constructs the authorization headers."""
         creds = self._get_credentials()
-        print(f"the centeral api-key{creds.api_key}")
         return {
             "Authorization": f"Api-Key {creds.api_key}",
             "Content-Type": "application/json",
@@ -41,7 +40,6 @@ class CentralAPIClient:
     def _get_url(self, endpoint):
         """Constructs the full URL for a given API endpoint."""
         creds = self._get_credentials()
-        print(f"the centeral api-key{creds.api_key}")
         return f"{creds.base_url.rstrip('/')}/api/sync/{endpoint.lstrip('/')}"
 
     def get_pending_changes(self):
@@ -54,7 +52,6 @@ class CentralAPIClient:
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            print(f"Error fetching pending changes: {e}")
             return None
 
     def push_changes(self, changes_payload):
@@ -72,7 +69,6 @@ class CentralAPIClient:
             response.raise_for_status()
             return True, response.json()
         except requests.RequestException as e:
-            print(f"Error pushing changes: {e}")
             return False, str(e)
 
     def acknowledge_changes(self, event_ids):
@@ -91,5 +87,4 @@ class CentralAPIClient:
             response.raise_for_status()
             return True, response.json()
         except requests.RequestException as e:
-            print(f"Error acknowledging changes: {e}")
             return False, str(e)

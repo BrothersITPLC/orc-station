@@ -1,3 +1,6 @@
+from django.conf import (  # Import settings to get AUTH_USER_MODEL if needed, though CustomUser is directly imported
+    settings,
+)
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 

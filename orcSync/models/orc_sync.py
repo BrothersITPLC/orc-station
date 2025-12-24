@@ -148,12 +148,12 @@ class ZoimeUserSyncStatus(models.Model):
     Does not modify the CustomUser model directly.
     """
 
-    zoime_incremental_id = models.AutoField(
+    zoime_incremental_id = models.PositiveIntegerField(
         unique=True,
         db_index=True,
         editable=False,
-        primary_key=True,
-        help_text="An incremental integer ID for mapping to the Zoime system.",
+        null=True,
+        help_text="An auto-incrementing integer for mapping to the Zoime system.",
     )
     user = models.OneToOneField(
         "users.CustomUser",
@@ -187,6 +187,14 @@ class ZoimeUserSyncStatus(models.Model):
         verbose_name = "Zoime User Sync Status"
         verbose_name_plural = "Zoime User Sync Statuses"
         ordering = ["user__username"]
+
+    def save(self, *args, **kwargs):
+        if self.zoime_incremental_id is None:
+            last_id = ZoimeUserSyncStatus.objects.aggregate(
+                models.Max("zoime_incremental_id")
+            )["zoime_incremental_id__max"]
+            self.zoime_incremental_id = (last_id or 0) + 1
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Zoime Sync for {self.user.username} (Last synced: {self.last_synced_at or 'Never'})"

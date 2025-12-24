@@ -101,48 +101,66 @@ def cashier_daily_summary_report(request):
         .filter(taxpayer_type__in=["Regular", "Walk-in"])
     )  # Only consider valid taxpayer types
 
-    # 3. Perform a single database aggregation for all revenue and weight sums
-    aggregates = checkins_with_data.aggregate(
-        total_revenue_overall=Coalesce(Sum("revenue"), Decimal(0)),
-        total_weight_overall=Coalesce(Sum("incremental_weight"), Decimal(0)),
-        revenue_regular_sum=Coalesce(
-            Sum("revenue", filter=Q(taxpayer_type="Regular")), Decimal(0)
-        ),
-        revenue_walkin_sum=Coalesce(
-            Sum("revenue", filter=Q(taxpayer_type="Walk-in")), Decimal(0)
-        ),
-        weight_regular_sum=Coalesce(
-            Sum("incremental_weight", filter=Q(taxpayer_type="Regular")), Decimal(0)
-        ),
-        weight_walkin_sum=Coalesce(
-            Sum("incremental_weight", filter=Q(taxpayer_type="Walk-in")), Decimal(0)
-        ),
-    )
+    # 3. Perform aggregation in Python
+    # Initialize accumulators
+    total_rev = Decimal(0)
+    total_weight = Decimal(0)
+    rev_reg = Decimal(0)
+    rev_walk = Decimal(0)
+    weight_reg = Decimal(0)
+    weight_walk = Decimal(0)
+    
+    unique_exporters_all = set()
+    unique_exporters_regular = set()
+    unique_exporters_walkin = set()
 
-    # 4. Count distinct taxpayers (exporters)
-    # We need to coalesce the exporter ID first, then count distinct.
-    annotated_exporters = checkins_with_data.annotate(
-        exporter_id=Coalesce(
-            F("declaracion__exporter__id"), F("localJourney__exporter__id")
-        )
-    ).filter(
-        exporter_id__isnull=False
-    )  # Ensure an exporter is linked
+    for checkin in checkins_with_data:
+        rev = checkin.revenue or Decimal(0)
+        weight = checkin.incremental_weight or Decimal(0)
+        t_type = checkin.taxpayer_type
+        
+        # Collect explicit exporter ID if available (either from declaracion or localJourney)
+        # Note: checkin.taxpayer_type is set by the annotation, so we know which relation to check
+        # BUT getting the ID directly via relation traversal in loop is fine.
+        # Ideally checkin.declaracion_id or checkin.localJourney_id is faster if we only needed checkin ID,
+        # but we need Exporter ID.
+        # We can also check both since one will be null.
+        exporter_id = None
+        if checkin.declaracion_id and checkin.declaracion.exporter_id:
+            exporter_id = checkin.declaracion.exporter_id
+        elif checkin.localJourney_id and checkin.localJourney.exporter_id:
+            exporter_id = checkin.localJourney.exporter_id
+            
+        if exporter_id:
+            unique_exporters_all.add(exporter_id)
+            if t_type == "Regular":
+                unique_exporters_regular.add(exporter_id)
+            elif t_type == "Walk-in":
+                unique_exporters_walkin.add(exporter_id)
 
-    # Count overall distinct taxpayers
-    checkedin_tax_payers = annotated_exporters.aggregate(
-        count=Coalesce(Count("exporter_id", distinct=True), 0)
-    )["count"]
+        total_rev += rev
+        total_weight += weight
+        
+        if t_type == "Regular":
+            rev_reg += rev
+            weight_reg += weight
+        elif t_type == "Walk-in":
+            rev_walk += rev
+            weight_walk += weight
 
-    # Count distinct regular taxpayers
-    tax_payers_regular = annotated_exporters.filter(taxpayer_type="Regular").aggregate(
-        count=Coalesce(Count("exporter_id", distinct=True), 0)
-    )["count"]
+    aggregates = {
+        "total_revenue_overall": total_rev,
+        "total_weight_overall": total_weight,
+        "revenue_regular_sum": rev_reg,
+        "revenue_walkin_sum": rev_walk,
+        "weight_regular_sum": weight_reg,
+        "weight_walkin_sum": weight_walk,
+    }
 
-    # Count distinct walk-in taxpayers
-    tax_payers_walkin = annotated_exporters.filter(taxpayer_type="Walk-in").aggregate(
-        count=Coalesce(Count("exporter_id", distinct=True), 0)
-    )["count"]
+    # 4. Count distinct taxpayers (exporters) - Python
+    checkedin_tax_payers = len(unique_exporters_all)
+    tax_payers_regular = len(unique_exporters_regular)
+    tax_payers_walkin = len(unique_exporters_walkin)
 
     # 5. Prepare the response data (structure preserved for frontend)
     response_data = [

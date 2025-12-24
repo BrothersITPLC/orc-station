@@ -1,19 +1,12 @@
 from django.db.models import Q
 from rest_framework import status
-from rest_framework.permissions import (
-    AllowAny,
-    IsAdminUser,
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
-)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from path.models import Path, PathStation
+from path.models import PathStation
 from tax.models import Tax
 from trucks.models import Truck
 from users.views.permissions import GroupPermission
-from workstations.models import WorkStation
 from workstations.serializers import WorkStationSerializer
 
 from .models import Checkin, Declaracion
@@ -21,7 +14,6 @@ from .serializers import CheckinSerializer, DeclaracionSerializer
 
 
 def create_response(data, status_code=status.HTTP_200_OK):
-
     return Response(data, status=status_code)
 
 

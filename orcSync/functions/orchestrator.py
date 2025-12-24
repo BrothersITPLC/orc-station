@@ -18,112 +18,6 @@ logger = logging.getLogger(__name__)
 MAX_RETRIES = 5
 
 
-# def _apply_server_changes(changes, api_client):
-#     """
-#     Processes and applies changes received from the server.
-#     Handles creation, updates, and deletion of local objects, including file downloads.
-#     NEW: Acknowledges successful changes in small batches for resilience.
-#     """
-#     applied_event_ids_batch = []
-#     batch_size = 10
-
-#     from orcSync.signals import handle_delete, handle_save
-
-#     for i, change in enumerate(changes):
-#         model_label = change["model"]
-#         object_id = change["object_id"]
-#         action = change["action"]
-#         payload = change["data_payload"]
-
-#         try:
-#             Model = apps.get_model(model_label)
-
-#             post_save.disconnect(
-#                 handle_save, sender=Model, dispatch_uid=f"sync_save_{Model._meta.label}"
-#             )
-#             pre_delete.disconnect(
-#                 handle_delete,
-#                 sender=Model,
-#                 dispatch_uid=f"sync_delete_{Model._meta.label}",
-#             )
-
-#             with transaction.atomic():
-#                 if action == "C" or action == "U":
-#                     file_urls, data_fields = {}, {}
-#                     for field_name, value in payload.items():
-#                         if not hasattr(Model, field_name):
-#                             continue
-#                         field_obj = Model._meta.get_field(field_name)
-#                         if (
-#                             isinstance(field_obj, models.FileField)
-#                             and isinstance(value, str)
-#                             and value.startswith("http")
-#                         ):
-#                             file_urls[field_name] = value
-#                         else:
-#                             data_fields[field_name] = value
-
-#                     instance, created = Model.objects.update_or_create(
-#                         pk=object_id, defaults=data_fields
-#                     )
-
-#                     for field_name, url in file_urls.items():
-#                         try:
-#                             response = requests.get(url, stream=True)
-#                             response.raise_for_status()
-#                             filename = url.split("/")[-1]
-#                             getattr(instance, field_name).save(
-#                                 filename, ContentFile(response.content), save=True
-#                             )
-#                         except requests.RequestException as e:
-#                             print(
-#                                 f"SYNC ERROR: Failed to download file for {object_id} from {url}. Error: {e}"
-#                             )
-
-#                 elif action == "D":
-#                     instance_to_delete = Model.objects.filter(pk=object_id).first()
-#                     if instance_to_delete:
-#                         instance_to_delete._is_sync_operation = True
-#                         instance_to_delete.delete()
-
-#             applied_event_ids_batch.append(change["id"])
-
-#         except LookupError:
-#             print(
-#                 f"SYNC WARNING: Model {model_label} not found locally. Skipping change."
-#             )
-#         except Exception as e:
-#             print(f"SYNC ERROR: Failed applying change {change['id']}: {e}. Skipping.")
-#         finally:
-#             post_save.connect(
-#                 handle_save, sender=Model, dispatch_uid=f"sync_save_{Model._meta.label}"
-#             )
-#             pre_delete.connect(
-#                 handle_delete,
-#                 sender=Model,
-#                 dispatch_uid=f"sync_delete_{Model._meta.label}",
-#             )
-
-#         is_batch_full = len(applied_event_ids_batch) >= batch_size
-#         is_last_item = (i + 1) == len(changes)
-
-#         if (is_batch_full or is_last_item) and applied_event_ids_batch:
-#             print(
-#                 f"Acknowledging batch of {len(applied_event_ids_batch)} applied changes..."
-#             )
-#             success, _ = api_client.acknowledge_changes(applied_event_ids_batch)
-#             if not success:
-#                 print(
-#                     "SYNC WARNING: Failed to acknowledge batch. These changes may be re-downloaded later."
-#                 )
-
-#             applied_event_ids_batch = []
-
-
-def loging_function(name):
-    logger.warning(name)
-
-
 def _apply_server_changes(changes, api_client):
     applied_event_ids_batch = []
     batch_size = 10
@@ -148,30 +42,48 @@ def _apply_server_changes(changes, api_client):
                 dispatch_uid=f"sync_delete_{Model._meta.label}",
             )
 
-            with transaction.atomic():
-                if action in ("C", "U"):
-                    file_urls, data_fields = {}, {}
-                    for field_name, value in payload.items():
-                        if not hasattr(Model, field_name):
-                            continue
-                        field_obj = Model._meta.get_field(field_name)
-                        if (
-                            isinstance(field_obj, models.FileField)
-                            and isinstance(value, str)
-                            and value.startswith("http")
-                        ):
-                            file_urls[field_name] = value
-                        else:
-                            data_fields[field_name] = value
+            if action in ("C", "U"):
+                # Step 1: Separate file URLs from regular data fields
+                file_urls, data_fields = {}, {}
+                for field_name, value in payload.items():
+                    if not hasattr(Model, field_name):
+                        continue
+                    field_obj = Model._meta.get_field(field_name)
+                    if (
+                        isinstance(field_obj, models.FileField)
+                        and isinstance(value, str)
+                        and value.startswith("http")
+                    ):
+                        file_urls[field_name] = value
+                    else:
+                        data_fields[field_name] = value
 
+                # Step 2: Download files BEFORE transaction (I/O outside DB transaction)
+                downloaded_files = {}
+                for field_name, url in file_urls.items():
                     try:
-                        print("➡️ before atomic")
+                        print(f"📥 Downloading file from {url}...")
+                        response = requests.get(url, stream=True, timeout=30)
+                        response.raise_for_status()
+                        filename = url.split("/")[-1]
+                        downloaded_files[field_name] = (filename, ContentFile(response.content))
+                        print(f"✅ Downloaded {filename} successfully")
+                    except requests.RequestException as e:
+                        print(
+                            f"SYNC ERROR: Failed to download file for {object_id} from {url}. Error: {e}"
+                        )
+                        # Continue without this file - don't block the entire sync
+
+                # Step 3: Quick database transaction (no I/O inside)
+                with transaction.atomic():
+                    try:
+                        print("➡️ Starting database transaction")
 
                         # Try normal update_or_create by PK
                         instance, created = Model.objects.update_or_create(
                             pk=object_id, defaults=data_fields
                         )
-                        print("➡️ after atomic")
+                        print(f"➡️ {'Created' if created else 'Updated'} instance {object_id}")
 
                     except IntegrityError as e:
                         print("⚠️ IntegrityError detected:", e, flush=True)
@@ -195,7 +107,7 @@ def _apply_server_changes(changes, api_client):
                                 pass
 
                         if not unique_field:
-                            # fallback if the error message doesn’t include field info
+                            # fallback if the error message doesn't include field info
                             print(
                                 "Could not determine which unique field caused IntegrityError",
                                 flush=True,
@@ -270,29 +182,31 @@ def _apply_server_changes(changes, api_client):
 
                     except Exception as e:
                         print(
-                            f"SYNC ERROR: Failed to apply change {change['id']}: {e}. Skipping. ******************************** PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP"
+                            f"SYNC ERROR: Failed to apply change {change['id']}: {e}. Skipping."
                         )
                         continue
 
-                    # Handle file fields
-                    for field_name, url in file_urls.items():
+                    # Step 4: Save pre-downloaded files (still in transaction, but quick)
+                    for field_name, (filename, content) in downloaded_files.items():
                         try:
-                            response = requests.get(url, stream=True)
-                            response.raise_for_status()
-                            filename = url.split("/")[-1]
+                            print(f"💾 Saving file {filename} to {field_name}...")
                             getattr(instance, field_name).save(
-                                filename, ContentFile(response.content), save=True
+                                filename, content, save=True
                             )
-                        except requests.RequestException as e:
+                            print(f"✅ File {filename} saved successfully")
+                        except Exception as e:
                             print(
-                                f"SYNC ERROR: Failed to download file for {object_id} from {url}. Error: {e}"
+                                f"SYNC ERROR: Failed to save file {filename} for {object_id}. Error: {e}"
                             )
 
-                elif action == "D":
+            elif action == "D":
+                # Delete operations are quick, can stay in transaction
+                with transaction.atomic():
                     instance_to_delete = Model.objects.filter(pk=object_id).first()
                     if instance_to_delete:
                         instance_to_delete._is_sync_operation = True
                         instance_to_delete.delete()
+                        print(f"🗑️ Deleted instance {object_id}")
 
             applied_event_ids_batch.append(change["id"])
 
@@ -303,7 +217,7 @@ def _apply_server_changes(changes, api_client):
 
         except Exception as e:
             print(
-                f"SYNC ERROR: Failed applying change {change['id']}: {e}. Skipping.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+                f"SYNC ERROR: Failed applying change {change['id']}: {e}. Skipping."
             )
         finally:
             post_save.connect(

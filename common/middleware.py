@@ -145,6 +145,7 @@ class AttachJWTTokenMiddleware:
                 "completed_declaracion-detail",
                 "zoime-sync-user-list",
                 "zoime-sync-user-trigger",
+                "admin-password-reset",
             ]
             and request.path != "/admin/login/"
         ):
@@ -173,8 +174,28 @@ class RefreshTokenMiddleware:
                         status=status.HTTP_401_UNAUTHORIZED,
                     )
         return None
+    
+    def validate_session(self, user, session_token):
+        """Validate if the session token is still active in the database."""
+        if not session_token:
+            return False
+        
+        # Check if user's current session token matches
+        if user.session_token != session_token:
+            return False
+        
+        # Check if session exists and is active
+        from users.models import UserSession
+        session_exists = UserSession.objects.filter(
+            user=user,
+            session_token=session_token,
+            is_active=True
+        ).exists()
+        
+        return session_exists
 
     def __call__(self, request):
+        
         exempt_paths = [
             "/admin/",
             "/admin/login/",
@@ -221,6 +242,9 @@ class RefreshTokenMiddleware:
                 "logout",
                 "schema-json",
                 "schema-swagger-ui",
+                "schema",
+                "swagger-ui",
+                "redoc",
                 "user-api-detail",
                 "user-api-list",
                 "trucks-list",
@@ -247,6 +271,7 @@ class RefreshTokenMiddleware:
 
         token = request.COOKIES.get("access")
         refresh_token = request.COOKIES.get("refresh")
+        session_token = request.COOKIES.get("session")
 
         if not token:
             return JsonResponse(
@@ -259,38 +284,60 @@ class RefreshTokenMiddleware:
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        response = self.get_response(request)
-
+        # ============================================================
+        # FIXED: Validate and refresh token BEFORE processing request
+        # ============================================================
+        token_was_refreshed = False
+        new_access_token = None
+        new_refresh_token = None  # Track new refresh token for rotation
+        
         try:
+            # Try to decode the access token
             payload = jwt.decode(
                 token,
                 settings.SIMPLE_JWT["SIGNING_KEY"],
                 algorithms=[api_settings.ALGORITHM],
             )
             exp = payload["exp"]
-
+            user_id = payload.get("user_id")
+            
+            # Validate session
+            if user_id:
+                try:
+                    user = User.objects.get(id=user_id)
+                    if not self.validate_session(user, session_token):
+                        new_response = JsonResponse(
+                            {
+                                "error": "Session invalidated. You have been logged out from this device.",
+                                "session_invalidated": True
+                            },
+                            status=status.HTTP_401_UNAUTHORIZED,
+                        )
+                        new_response.delete_cookie("access")
+                        new_response.delete_cookie("refresh")
+                        new_response.delete_cookie("session")
+                        new_response.delete_cookie("csrftoken")
+                        return new_response
+                except User.DoesNotExist:
+                    pass
+            
             if datetime.fromtimestamp(exp, timezone.utc) < datetime.now(timezone.utc):
                 try:
                     refresh = RefreshToken(refresh_token)
-                    access_token = str(refresh.access_token)
-                    request.META["HTTP_AUTHORIZATION"] = f"Bearer {access_token}"
-
-                    user = get_user_from_token(access_token)
+                    new_access_token = str(refresh.access_token)
+                    # IMPORTANT: Get the NEW rotated refresh token (ROTATE_REFRESH_TOKENS=True)
+                    new_refresh_token = str(refresh)
+                    token_was_refreshed = True
+                    
+                    # Update request authorization header for the view
+                    request.META["HTTP_AUTHORIZATION"] = f"Bearer {new_access_token}"
+                    
+                    user = get_user_from_token(new_access_token)
                     status_response = self.check_user_status(user)
                     if status_response:
                         return status_response
-
-                    response.set_cookie(
-                        "access",
-                        access_token,
-                        httponly=True,
-                        secure=True,
-                        samesite="Strict",
-                        expires=datetime.now() + timedelta(days=1),
-                    )
-                    return response
-
-                except TokenError:
+                        
+                except TokenError as e:
                     new_response = JsonResponse(
                         {"error": "Invalid refresh token"},
                         status=status.HTTP_401_UNAUTHORIZED,
@@ -298,28 +345,41 @@ class RefreshTokenMiddleware:
                     new_response.delete_cookie("access")
                     new_response.delete_cookie("refresh")
                     return new_response
+                        
         except jwt.ExpiredSignatureError:
+            # Token is expired - refresh it BEFORE processing the request
             try:
                 refresh = RefreshToken(refresh_token)
-                access_token = str(refresh.access_token)
-                request.META["HTTP_AUTHORIZATION"] = f"Bearer {access_token}"
-
-                user = get_user_from_token(access_token)
+                new_access_token = str(refresh.access_token)
+                # IMPORTANT: Get the NEW rotated refresh token (ROTATE_REFRESH_TOKENS=True)
+                new_refresh_token = str(refresh)
+                token_was_refreshed = True
+                
+                # Update request authorization header for the view
+                request.META["HTTP_AUTHORIZATION"] = f"Bearer {new_access_token}"
+                
+                user = get_user_from_token(new_access_token)
+                
+                # Validate session with the refreshed token's user
+                if user and not self.validate_session(user, session_token):
+                    new_response = JsonResponse(
+                        {
+                            "error": "Session invalidated. You have been logged out from this device.",
+                            "session_invalidated": True
+                        },
+                        status=status.HTTP_401_UNAUTHORIZED,
+                    )
+                    new_response.delete_cookie("access")
+                    new_response.delete_cookie("refresh")
+                    new_response.delete_cookie("session")
+                    new_response.delete_cookie("csrftoken")
+                    return new_response
+                
                 status_response = self.check_user_status(user)
                 if status_response:
                     return status_response
-
-                response.set_cookie(
-                    "access",
-                    access_token,
-                    httponly=True,
-                    secure=True,
-                    samesite="Strict",
-                    expires=datetime.now() + timedelta(days=1),
-                )
-                return response
-
-            except TokenError:
+                    
+            except TokenError as e:
                 new_response = JsonResponse(
                     {"error": "Invalid refresh token"},
                     status=status.HTTP_401_UNAUTHORIZED,
@@ -327,13 +387,47 @@ class RefreshTokenMiddleware:
                 new_response.delete_cookie("access")
                 new_response.delete_cookie("refresh")
                 return new_response
-        except jwt.InvalidTokenError:
+                
+        except jwt.InvalidTokenError as e:
             new_response = JsonResponse(
                 {"error": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED
             )
             new_response.delete_cookie("access")
             new_response.delete_cookie("refresh")
             return new_response
+
+        # ============================================================
+        # NOW process the request (token is valid or was just refreshed)
+        # ============================================================
+        response = self.get_response(request)
+
+        # If token was refreshed, set the new access AND refresh token cookies on the response
+        if token_was_refreshed and new_access_token:
+            # IMPORTANT: Cookie expiration should match refresh token lifetime (days, not minutes)
+            # so the cookie persists for future token refreshes
+            cookie_expiration_days = settings.TOKEN_CONFIG['COOKIE_EXPIRATION_DAYS']
+            cookie_expires = datetime.now(timezone.utc) + timedelta(days=cookie_expiration_days)
+            
+            response.set_cookie(
+                "access",
+                new_access_token,
+                httponly=True,
+                secure=True,
+                samesite="Strict",
+                expires=cookie_expires,
+            )
+            
+            # CRITICAL: Also set the NEW rotated refresh token!
+            # Without this, the old (now blacklisted) refresh token stays in the cookie
+            if new_refresh_token:
+                response.set_cookie(
+                    "refresh",
+                    new_refresh_token,
+                    httponly=True,
+                    secure=True,
+                    samesite="Strict",
+                    expires=cookie_expires,
+                )
 
         return response
 
@@ -359,3 +453,235 @@ class DisplayCurrentUserMiddleware(MiddlewareMixin):
         except Exception:
             set_current_user(None)
         return None
+
+
+class DisableCSRFForAPIMiddleware(MiddlewareMixin):
+    """
+    Middleware to disable CSRF validation for all /api/* endpoints.
+    This allows testing with API clients like Postman, Bruno, etc.
+    """
+    def process_request(self, request):
+        if request.path.startswith("/api/"):
+            setattr(request, '_dont_enforce_csrf_checks', True)
+        return None
+
+
+class InputValidationMiddleware:
+    """
+    Middleware to validate and sanitize all incoming request data.
+    
+    Protects against:
+    - XSS (Cross-Site Scripting) attacks
+    - SQL Injection attacks
+    - Command Injection attacks
+    - Buffer overflow attempts
+    
+    This runs centrally for ALL requests without needing to modify individual views.
+    """
+    
+    def __init__(self, get_response):
+        self.get_response = get_response
+        
+        # Import validators
+        from common.validators import (
+            validate_input,
+            get_violation_type,
+            validate_field_length,
+        )
+        self.validate_input = validate_input
+        self.get_violation_type = get_violation_type
+        self.validate_field_length = validate_field_length
+        
+    def __call__(self, request):
+        # Skip validation for exempt paths
+        if self._should_skip_validation(request):
+            return self.get_response(request)
+        
+        # Only validate methods that send data
+        if request.method in ['POST', 'PUT', 'PATCH']:
+            import logging
+            logger = logging.getLogger('security.validation')
+            logger.info(f"Validating {request.method} request to {request.path}")
+            
+            try:
+                self._validate_request_data(request)
+                logger.info(f"Validation passed for {request.path}")
+            except Exception as e:
+                logger.warning(f"Validation failed for {request.path}: {str(e)}")
+                return self._create_error_response(str(e), field=getattr(e, 'field_name', None))
+        
+        response = self.get_response(request)
+        return response
+    
+    def _should_skip_validation(self, request):
+        """
+        Determine if validation should be skipped for this request.
+        """
+        # Get whitelist paths from settings
+        whitelist_paths = getattr(settings, 'INPUT_VALIDATION', {}).get('WHITELIST_PATHS', [
+            '/admin/',
+            '/static/',
+            '/media/',
+        ])
+        
+        # Check if path is whitelisted
+        for path in whitelist_paths:
+            if request.path.startswith(path):
+                return True
+        
+        # Check if validation is disabled
+        if not getattr(settings, 'INPUT_VALIDATION', {}).get('ENABLED', True):
+            return True
+        
+        return False
+    
+    def _validate_request_data(self, request):
+        """
+        Validate all data in the request (POST, PUT, PATCH).
+        """
+        import json
+        from django.core.exceptions import ValidationError
+        
+        # Get validation settings
+        validation_config = getattr(settings, 'INPUT_VALIDATION', {})
+        strict_mode = validation_config.get('STRICT_MODE', True)
+        max_string_length = validation_config.get('MAX_STRING_LENGTH', 255)
+        max_text_length = validation_config.get('MAX_TEXT_LENGTH', 5000)
+        field_limits = validation_config.get('FIELD_LENGTH_LIMITS', {})
+        
+        # Get request data
+        data_to_validate = {}
+        
+        # Handle JSON data (most API requests)
+        if request.content_type and 'application/json' in request.content_type:
+            try:
+                # Read body before it's consumed
+                if request.body:
+                    data_to_validate = json.loads(request.body.decode('utf-8'))
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                # Invalid JSON - let Django handle the error
+                return
+        # Handle form data
+        elif request.POST:
+            data_to_validate = dict(request.POST)
+        
+        # If no data to validate, skip
+        if not data_to_validate:
+            return
+        
+        # Validate each field recursively
+        self._validate_dict(data_to_validate, field_limits, max_string_length, strict_mode)
+    
+    def _validate_dict(self, data, field_limits, max_string_length, strict_mode, parent_key=''):
+        """
+        Recursively validate dictionary data.
+        """
+        for field_name, value in data.items():
+            full_field_name = f"{parent_key}.{field_name}" if parent_key else field_name
+            
+            # Handle nested dictionaries
+            if isinstance(value, dict):
+                self._validate_dict(value, field_limits, max_string_length, strict_mode, full_field_name)
+            # Handle lists
+            elif isinstance(value, list):
+                for i, item in enumerate(value):
+                    if isinstance(item, dict):
+                        self._validate_dict(item, field_limits, max_string_length, strict_mode, f"{full_field_name}[{i}]")
+                    elif isinstance(item, str):
+                        self._validate_field(full_field_name, item, field_limits, max_string_length, strict_mode)
+            # Handle strings
+            elif isinstance(value, str):
+                self._validate_field(field_name, value, field_limits, max_string_length, strict_mode)
+    
+    def _validate_field(self, field_name, value, field_limits, max_string_length, strict_mode):
+        """
+        Validate a single field value.
+        """
+        from django.core.exceptions import ValidationError
+        
+        # Determine max length for this field
+        max_length = field_limits.get(field_name, max_string_length)
+        
+        # Special handling for text/content fields
+        if field_name in ['content', 'description', 'message', 'text', 'body']:
+            max_length = field_limits.get('content', 5000)
+        
+        # Check for security violations
+        violation_type = self.get_violation_type(value)
+        
+        if violation_type:
+            # Log the violation
+            self._log_security_violation(violation_type, field_name, value)
+            
+            # Raise appropriate error
+            if violation_type == 'XSS':
+                error = ValidationError(
+                    f"Potentially dangerous content detected in field '{field_name}'"
+                )
+            elif violation_type == 'SQL_INJECTION':
+                error = ValidationError(
+                    f"Suspicious SQL pattern detected in field '{field_name}'"
+                )
+            elif violation_type == 'COMMAND_INJECTION':
+                error = ValidationError(
+                    f"Suspicious command pattern detected in field '{field_name}'"
+                )
+            else:
+                error = ValidationError(f"Invalid content in field '{field_name}'")
+            
+            error.field_name = field_name
+            error.violation_type = violation_type
+            raise error
+        
+        # Validate length
+        try:
+            self.validate_field_length(value, max_length, field_name)
+        except ValidationError as e:
+            e.field_name = field_name
+            raise e
+    
+    def _log_security_violation(self, violation_type, field_name, value):
+        """
+        Log security violations for monitoring.
+        """
+        import logging
+        
+        # Only log if enabled in settings
+        if not getattr(settings, 'INPUT_VALIDATION', {}).get('LOG_VIOLATIONS', True):
+            return
+        
+        logger = logging.getLogger('security.violations')
+        logger.warning(
+            f"Security violation detected: {violation_type} in field '{field_name}'",
+            extra={
+                'violation_type': violation_type,
+                'field_name': field_name,
+                'value_preview': value[:100] if len(value) > 100 else value,
+            }
+        )
+    
+    def _create_error_response(self, error_message, field=None):
+        """
+        Create a standardized error response.
+        """
+        error_data = {
+            'error': 'Security Violation' if 'dangerous' in error_message or 'SQL' in error_message or 'command' in error_message else 'Validation Error',
+            'detail': error_message,
+        }
+        
+        if field:
+            error_data['field'] = field
+        
+        # Determine error code
+        if 'XSS' in error_message or 'dangerous' in error_message:
+            error_data['code'] = 'XSS_DETECTED'
+        elif 'SQL' in error_message:
+            error_data['code'] = 'SQL_INJECTION_DETECTED'
+        elif 'command' in error_message:
+            error_data['code'] = 'COMMAND_INJECTION_DETECTED'
+        elif 'exceeds maximum length' in error_message:
+            error_data['code'] = 'MAX_LENGTH_EXCEEDED'
+        else:
+            error_data['code'] = 'VALIDATION_ERROR'
+        
+        return JsonResponse(error_data, status=400)

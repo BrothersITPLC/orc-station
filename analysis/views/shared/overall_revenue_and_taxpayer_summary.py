@@ -112,16 +112,15 @@ def overall_revenue_and_taxpayer_summary(request):
             .filter(taxpayer_type__in=["Regular", "WalkIn"])
         )  # Only consider valid taxpayer types
 
-        # 4. Aggregate total revenue by taxpayer type
-        aggregated_revenue = checkins_with_revenue.values("taxpayer_type").annotate(
-            total_revenue=Coalesce(Sum("revenue"), Decimal(0))
-        )
-
-        for item in aggregated_revenue:
-            if item["taxpayer_type"] == "WalkIn":
-                walk_in_amount = item["total_revenue"]
-            elif item["taxpayer_type"] == "Regular":
-                regular_amount = item["total_revenue"]
+        # 4. Aggregate total revenue by taxpayer type (Python)
+        for checkin in checkins_with_revenue:
+            rev = checkin.revenue or Decimal(0)
+            t_type = checkin.taxpayer_type
+            
+            if t_type == "WalkIn":
+                walk_in_amount += rev
+            elif t_type == "Regular":
+                regular_amount += rev
 
     # 5. Count regular and walk-in exporters within the specified date range (based on created_at)
     regular_exporters_count = Exporter.objects.filter(

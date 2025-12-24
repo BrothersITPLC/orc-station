@@ -9,6 +9,7 @@ from base.models import BaseModel
 class Commodity(BaseModel):
     name = models.CharField(max_length=400, unique=True)
     unit_price = models.PositiveBigIntegerField()
+
     created_by = models.ForeignKey(
         "users.CustomUser",
         on_delete=models.PROTECT,
@@ -123,6 +124,10 @@ class Checkin(BaseModel):
     description = models.TextField(null=True)
     unit_price = models.PositiveBigIntegerField(default=0)
     rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    _offline_synced = models.BooleanField(
+        default=False,
+        help_text="Set to True if this record was synced via QR code offline sync"
+    )
 
     class Meta:
         constraints = [

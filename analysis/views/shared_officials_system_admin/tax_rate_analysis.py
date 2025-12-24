@@ -119,59 +119,54 @@ def tax_rate_analysis(request):
     if not ranges:
         return Response([])
 
-    # 4. Build dynamic Case statements for grouping checkins into weight ranges
-    range_labels = []  # To store labels like "X-Ykg" for the final output
-    case_statements = []
+    # 4. Aggregate revenue per range using Python
+    # Initialize buckets for the 5 ranges
+    # ranges looks like: [{'min': 0, 'max': 200}, {'min': 201, 'max': 400}, ...]
+    # We need to sum revenue for checkins falling into each bucket.
+    
+    range_revenues_ordered = [Decimal(0)] * len(ranges)
+    total_revenue = Decimal(0)
+    
+    for checkin in checkins_with_revenue:
+        w_val = checkin.net_weight
+        if w_val is None: 
+            continue
+            
+        rev = checkin.revenue or Decimal(0)
+        
+        # Determine which range this checkin belongs to
+        assigned_idx = -1
+        for i, r in enumerate(ranges):
+            min_w = r["min"]
+            max_w = r["max"]
+            
+            # Check range conditions matching the Original Query Logic:
+            # Q(net_weight__gte=min_w) & Q(net_weight__lt=max_w)
+            
+            if w_val >= min_w:
+                if max_w is None: 
+                    # Unbounded upper limit
+                    assigned_idx = i
+                    break
+                elif w_val < max_w:
+                    # Within bounds (exclusive top)
+                    assigned_idx = i
+                    break
+        
+        if assigned_idx != -1:
+            range_revenues_ordered[assigned_idx] += rev
+            total_revenue += rev
 
-    for i, weight_range in enumerate(ranges):
+    # Reconstitute labels for the response
+    range_labels = []
+    for weight_range in ranges:
         min_w = weight_range["min"]
         max_w = weight_range["max"]
-
-        # The condition uses the original 'net_weight' for range classification
-        condition = Q(net_weight__gte=min_w)
         if max_w is not None:
-            condition &= Q(net_weight__lt=max_w)  # Exclusive upper bound
             weight_label = f"{min_w}-{max_w}kg"
         else:
             weight_label = f"{min_w}kg+"
-
-        case_statements.append(When(condition, then=Value(i)))
         range_labels.append(weight_label)
-
-    # Annotate each checkin with its corresponding weight_range_group index
-    # Use -1 as a default for any checkins that somehow don't fall into a defined range,
-    # which can then be filtered out.
-    weight_range_idx_annotation = Case(
-        *case_statements,
-        default=Value(-1),
-        output_field=DecimalField(),  # Ensure consistent output type
-    )
-
-    # 5. Aggregate revenue per range at the database level
-    aggregated_data = (
-        checkins_with_revenue.annotate(
-            weight_range_group=weight_range_idx_annotation  # Add the range group index
-        )
-        .filter(weight_range_group__gte=0)  # Exclude checkins not in any defined range
-        .values("weight_range_group")  # Group by the assigned range index
-        .annotate(
-            range_revenue_sum=Sum("revenue", output_field=DecimalField()),
-        )
-        .order_by("weight_range_group")
-    )
-
-    # Initialize results list to ensure all 5 ranges are represented, even if empty
-    range_revenues_ordered = [Decimal(0)] * len(ranges)
-    total_revenue = Decimal(0)
-
-    # Populate the ordered list with aggregated revenues
-    for item in aggregated_data:
-        idx = int(item["weight_range_group"])
-        if 0 <= idx < len(ranges):  # Defensive check
-            range_revenues_ordered[idx] = item["range_revenue_sum"]
-
-    # Calculate total revenue from the ordered list
-    total_revenue = sum(range_revenues_ordered)
 
     # 6. Calculate percentage rates and format for the final response (unchanged structure)
     final_results = []
