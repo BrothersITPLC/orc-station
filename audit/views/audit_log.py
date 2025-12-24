@@ -1,7 +1,9 @@
-from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import filters, viewsets
 
 from audit.serializers import AuditLogSerializer
+from helper.permission import has_custom_permission
+from users.views.permissions import GroupPermission
 
 from ..models import AuditLog
 
@@ -9,14 +11,16 @@ from ..models import AuditLog
 class AuditLogViewSet(viewsets.ModelViewSet):
     """
     A viewset for viewing audit logs.
-    
+
     Provides read operations for AuditLog entities with filtering by table name and action.
     Audit logs track all create, update, and delete operations in the system.
     """
-    
+
     serializer_class = AuditLogSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ["action", "table_name"]
+    permission_classes = [GroupPermission]
+    permission_required = "view_auditlog"
 
     @extend_schema(
         summary="List all audit logs",
@@ -59,8 +63,12 @@ class AuditLogViewSet(viewsets.ModelViewSet):
         ],
         responses={
             200: AuditLogSerializer(many=True),
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to view audit logs"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to view audit logs"
+            },
         },
         examples=[
             OpenApiExample(
@@ -76,12 +84,12 @@ class AuditLogViewSet(viewsets.ModelViewSet):
                         "updated_snapshot": {
                             "first_name": "Abebe",
                             "last_name": "Tadesse",
-                            "license_number": "DL123456"
+                            "license_number": "DL123456",
                         },
                         "table_name": "driver",
                         "description": "Created new driver",
                         "created_at": "2024-01-15T10:30:00Z",
-                        "updated_at": "2024-01-15T10:30:00Z"
+                        "updated_at": "2024-01-15T10:30:00Z",
                     },
                     {
                         "id": 2,
@@ -89,17 +97,13 @@ class AuditLogViewSet(viewsets.ModelViewSet):
                         "action": "update",
                         "object_id": "5",
                         "timestamp": "2024-01-15T14:20:00Z",
-                        "previous_snapshot": {
-                            "phone_number": "+251911111111"
-                        },
-                        "updated_snapshot": {
-                            "phone_number": "+251922222222"
-                        },
+                        "previous_snapshot": {"phone_number": "+251911111111"},
+                        "updated_snapshot": {"phone_number": "+251922222222"},
                         "table_name": "driver",
                         "description": "Updated driver phone number",
                         "created_at": "2024-01-15T14:20:00Z",
-                        "updated_at": "2024-01-15T14:20:00Z"
-                    }
+                        "updated_at": "2024-01-15T14:20:00Z",
+                    },
                 ],
                 response_only=True,
             ),
@@ -117,12 +121,12 @@ class AuditLogViewSet(viewsets.ModelViewSet):
                         "updated_snapshot": {
                             "first_name": "Chaltu",
                             "last_name": "Bekele",
-                            "tin_number": "1234567890"
+                            "tin_number": "1234567890",
                         },
                         "table_name": "exporter",
                         "description": "Created new exporter",
                         "created_at": "2024-01-16T09:00:00Z",
-                        "updated_at": "2024-01-16T09:00:00Z"
+                        "updated_at": "2024-01-16T09:00:00Z",
                     }
                 ],
                 response_only=True,
@@ -140,13 +144,13 @@ class AuditLogViewSet(viewsets.ModelViewSet):
                         "previous_snapshot": {
                             "first_name": "Test",
                             "last_name": "User",
-                            "license_number": "TEST123"
+                            "license_number": "TEST123",
                         },
                         "updated_snapshot": None,
                         "table_name": "driver",
                         "description": "Deleted driver",
                         "created_at": "2024-01-17T11:30:00Z",
-                        "updated_at": "2024-01-17T11:30:00Z"
+                        "updated_at": "2024-01-17T11:30:00Z",
                     }
                 ],
                 response_only=True,
@@ -162,9 +166,15 @@ class AuditLogViewSet(viewsets.ModelViewSet):
         tags=["Audit"],
         responses={
             200: AuditLogSerializer,
-            401: {"description": "Unauthorized - Authentication credentials were not provided or are invalid"},
-            403: {"description": "Forbidden - You do not have permission to view this audit log"},
-            404: {"description": "Not Found - Audit log with the specified ID does not exist"},
+            401: {
+                "description": "Unauthorized - Authentication credentials were not provided or are invalid"
+            },
+            403: {
+                "description": "Forbidden - You do not have permission to view this audit log"
+            },
+            404: {
+                "description": "Not Found - Audit log with the specified ID does not exist"
+            },
         },
         examples=[
             OpenApiExample(
@@ -177,16 +187,16 @@ class AuditLogViewSet(viewsets.ModelViewSet):
                     "timestamp": "2024-01-15T14:20:00Z",
                     "previous_snapshot": {
                         "phone_number": "+251911111111",
-                        "email": "old@example.com"
+                        "email": "old@example.com",
                     },
                     "updated_snapshot": {
                         "phone_number": "+251922222222",
-                        "email": "new@example.com"
+                        "email": "new@example.com",
                     },
                     "table_name": "driver",
                     "description": "Updated driver contact information",
                     "created_at": "2024-01-15T14:20:00Z",
-                    "updated_at": "2024-01-15T14:20:00Z"
+                    "updated_at": "2024-01-15T14:20:00Z",
                 },
                 response_only=True,
             ),
@@ -216,8 +226,8 @@ class AuditLogViewSet(viewsets.ModelViewSet):
                     "description": "Manual system adjustment performed",
                     "updated_snapshot": {
                         "operation": "data_migration",
-                        "records_affected": 150
-                    }
+                        "records_affected": 150,
+                    },
                 },
                 request_only=True,
             ),
@@ -257,9 +267,7 @@ class AuditLogViewSet(viewsets.ModelViewSet):
         examples=[
             OpenApiExample(
                 "Update Description",
-                value={
-                    "description": "Updated description with additional context"
-                },
+                value={"description": "Updated description with additional context"},
                 request_only=True,
             ),
         ],
@@ -293,3 +301,7 @@ class AuditLogViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(action=action)
 
         return queryset
+
+    def get_permissions(self):
+
+        return has_custom_permission(self, "auditlog")
