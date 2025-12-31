@@ -212,6 +212,7 @@ class AttachJWTTokenMiddleware:
                 "zoime-sync-user-list",
                 "zoime-sync-user-trigger",
                 "admin-password-reset",
+                "verify-user",
             ]
             and request.path != "/admin/login/"
         ):
