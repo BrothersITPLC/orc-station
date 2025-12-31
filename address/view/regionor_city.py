@@ -212,7 +212,7 @@ class RegionorCityViewset(viewsets.ModelViewSet):
 
         if self.action in ["list", "retrieve"]:
             self.permission_required = None
-            return [permission() for permission in self.permission_classes]
+            return []
 
         return has_custom_permission(self, "regionorcity")
 
