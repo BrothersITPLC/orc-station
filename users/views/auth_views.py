@@ -563,6 +563,7 @@ class VerifyUserView(APIView):
     Endpoint for frontend to verify user role against backend.
     Returns the same format as login response (without tokens).
     Used to detect localStorage tampering.
+    Response is encrypted like login response for security.
     """
     permission_classes = [permissions.IsAuthenticated]
     
@@ -572,6 +573,7 @@ class VerifyUserView(APIView):
         description="""
         Returns the authenticated user's data in the same format as login.
         Used by frontend to verify that localStorage hasn't been tampered with.
+        Response is encrypted - decryption key is sent via X-Content-Security-Key header.
         
         **Security Note:**
         This endpoint reads user data from the authenticated JWT token,
@@ -580,22 +582,18 @@ class VerifyUserView(APIView):
         tags=["Authentication"],
         responses={
             200: {
-                "description": "User data verified",
+                "description": "User data verified (encrypted)",
                 "type": "object",
                 "properties": {
-                    "username": {"type": "string"},
-                    "email": {"type": "string"},
-                    "role": {"type": "string"},
-                    "id": {"type": "string"},
-                    "first_name": {"type": "string"},
-                    "last_name": {"type": "string"},
-                    "current_station": {"type": "object"},
+                    "data": {"type": "string", "description": "Encrypted user data"},
                 },
             },
             401: {"description": "Unauthorized - Invalid or expired token"},
         },
     )
     def get(self, request):
+        from common.encryption import encrypt_json_response
+        
         user = request.user
         
         # Return user data in the same format as login response
@@ -609,5 +607,16 @@ class VerifyUserView(APIView):
             "current_station": user.current_station.id if user.current_station else None,
         }
         
-        return Response(response_data, status=status.HTTP_200_OK)
+        # Encrypt the response like login endpoint
+        encrypted_data, encryption_key = encrypt_json_response(response_data)
+        
+        response = Response(
+            {"data": encrypted_data},
+            status=status.HTTP_200_OK
+        )
+        
+        # Send decryption key via custom header (same as login)
+        response['X-Content-Security-Key'] = encryption_key
+        
+        return response
 
