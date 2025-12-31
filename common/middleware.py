@@ -21,6 +21,72 @@ from utils import set_current_user
 User = get_user_model()
 
 
+class AccessTokenBlacklistMiddleware:
+    """
+    Middleware to check if access token is blacklisted on every request.
+    Prevents use of stolen/copied tokens after logout.
+    """
+    
+    def __init__(self, get_response):
+        self.get_response = get_response
+        import logging
+        self.logger = logging.getLogger('security.blacklist')
+    
+    def __call__(self, request):
+        # Skip validation for non-API endpoints and login/register
+        skip_paths = ['/admin/', '/static/', '/media/', '/api/users/login', '/api/users/register']
+        
+        if any(request.path.startswith(path) for path in skip_paths):
+            return self.get_response(request)
+        
+        # Check if access token is blacklisted
+        access_token = request.COOKIES.get('access')
+        
+        if access_token:
+            try:
+                from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+                
+                # Decode token to get JTI
+                token = AccessToken(access_token)
+                jti = token.payload.get('jti')
+                
+                self.logger.info(f"Checking blacklist for JTI: {jti}, Path: {request.path}")
+                
+                # Check if blacklisted
+                is_blacklisted = OutstandingToken.objects.filter(
+                    jti=jti,
+                    blacklistedtoken__isnull=False
+                ).exists()
+                
+                if is_blacklisted:
+                    self.logger.warning(f"BLACKLISTED TOKEN DETECTED! JTI: {jti}, Path: {request.path}")
+                    
+                    # Token is blacklisted - reject request
+                    response = JsonResponse({
+                        'error': 'Authentication credentials have been revoked',
+                        'detail': 'This token has been blacklisted. Please log in again.',
+                        'code': 'TOKEN_BLACKLISTED'
+                    }, status=401)
+                    
+                    # Clear all cookies
+                    response.delete_cookie('access')
+                    response.delete_cookie('refresh')
+                    response.delete_cookie('session')
+                    response.delete_cookie('csrftoken')
+                    
+                    return response
+                else:
+                    self.logger.info(f"Token JTI {jti} is NOT blacklisted")
+                    
+            except Exception as e:
+                # Log the error but don't block the request
+                self.logger.error(f"Error checking blacklist: {e}", exc_info=True)
+                pass
+        
+        return self.get_response(request)
+
+
+
 def get_user_from_token(token):
     try:
         access_token = AccessToken(token)
@@ -344,6 +410,8 @@ class RefreshTokenMiddleware:
                     )
                     new_response.delete_cookie("access")
                     new_response.delete_cookie("refresh")
+                    new_response.delete_cookie("session")
+                    new_response.delete_cookie("csrftoken")
                     return new_response
                         
         except jwt.ExpiredSignatureError:
@@ -386,6 +454,8 @@ class RefreshTokenMiddleware:
                 )
                 new_response.delete_cookie("access")
                 new_response.delete_cookie("refresh")
+                new_response.delete_cookie("session")
+                new_response.delete_cookie("csrftoken")
                 return new_response
                 
         except jwt.InvalidTokenError as e:
@@ -394,6 +464,8 @@ class RefreshTokenMiddleware:
             )
             new_response.delete_cookie("access")
             new_response.delete_cookie("refresh")
+            new_response.delete_cookie("session")
+            new_response.delete_cookie("csrftoken")
             return new_response
 
         # ============================================================
@@ -598,6 +670,7 @@ class InputValidationMiddleware:
         Validate a single field value.
         """
         from django.core.exceptions import ValidationError
+        from common.validators import validate_input
         
         # Determine max length for this field
         max_length = field_limits.get(field_name, max_string_length)
@@ -606,37 +679,17 @@ class InputValidationMiddleware:
         if field_name in ['content', 'description', 'message', 'text', 'body']:
             max_length = field_limits.get('content', 5000)
         
-        # Check for security violations
-        violation_type = self.get_violation_type(value)
-        
-        if violation_type:
-            # Log the violation
-            self._log_security_violation(violation_type, field_name, value)
-            
-            # Raise appropriate error
-            if violation_type == 'XSS':
-                error = ValidationError(
-                    f"Potentially dangerous content detected in field '{field_name}'"
-                )
-            elif violation_type == 'SQL_INJECTION':
-                error = ValidationError(
-                    f"Suspicious SQL pattern detected in field '{field_name}'"
-                )
-            elif violation_type == 'COMMAND_INJECTION':
-                error = ValidationError(
-                    f"Suspicious command pattern detected in field '{field_name}'"
-                )
-            else:
-                error = ValidationError(f"Invalid content in field '{field_name}'")
-            
-            error.field_name = field_name
-            error.violation_type = violation_type
-            raise error
-        
-        # Validate length
+        # Use the comprehensive validate_input function from validators.py
+        # This includes field character validation + XSS/SQL detection
         try:
-            self.validate_field_length(value, max_length, field_name)
+            validate_input(value, field_name, max_length, strict_mode=True)
         except ValidationError as e:
+            # Log the violation
+            import logging
+            logger = logging.getLogger('security.validation')
+            logger.warning(f"Validation failed for field '{field_name}': {str(e)}")
+            
+            # Re-raise with field name attached
             e.field_name = field_name
             raise e
     

@@ -1,5 +1,5 @@
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 
 from django.conf import settings
 from django.contrib.auth import authenticate, login
@@ -21,6 +21,7 @@ from users.serializers import CustomTokenObtainPairSerializer, UserSerializer
 from users.session_authentication import OneSessionPerUserAuthentication
 from utils import send_verification_email, set_current_user
 from workstations.serializers import WorkStationSerializer
+from common.encryption import encrypt_json_response
 
 from ..models import CustomUser, UserStatus, UserSession
 from users.utils.password_validator import validate_password_strength
@@ -248,12 +249,12 @@ class LoginView(APIView):
             data = serializer.validated_data
             
             # Get token expiration settings from centralized config
-            cookie_expiration_days = settings.TOKEN_CONFIG['COOKIE_EXPIRATION_DAYS']
+            cookie_max_age_seconds = settings.TOKEN_CONFIG['COOKIE_MAX_AGE_SECONDS']
             
-            # IMPORTANT: Cookie expiration should be LONGER than JWT lifetime!
+            # IMPORTANT: Cookie expiration should match or exceed JWT refresh token lifetime
             # The cookie must persist so middleware can read the expired JWT and refresh it.
             # All cookies (access, refresh, session) should have the same expiration.
-            expiry_date = datetime.now() + timedelta(days=cookie_expiration_days)
+            expiry_date = datetime.now() + timedelta(seconds=cookie_max_age_seconds)
             expiry_str = expiry_date.strftime("%a, %d-%b-%Y %H:%M:%S GMT")
             user = CustomUser.objects.get(username=data["username"])
             
@@ -297,6 +298,22 @@ class LoginView(APIView):
                 logged_out_at=timezone.now()
             )
             
+            # Clear Django admin sessions for this user
+            # This prevents concurrent logins in Django admin panel
+            try:
+                from django.contrib.sessions.models import Session
+                from django.contrib.auth import logout as django_logout
+                
+                # Find and delete all Django sessions for this user
+                all_sessions = Session.objects.all()
+                for session in all_sessions:
+                    session_data = session.get_decoded()
+                    if session_data.get('_auth_user_id') == str(user.pk):
+                        session.delete()
+            except Exception as e:
+                # Log but don't fail login if session clearing fails
+                print(f"Warning: Could not clear Django sessions: {e}")
+            
             # Generate new session token
             session = generate_session_token()
             user.session_token = session
@@ -313,18 +330,27 @@ class LoginView(APIView):
                 is_active=True
             )
 
+            # Prepare response data
+            response_data = {
+                "username": data["username"],
+                "role": data["role"],
+                "id": data["id"],
+                "first_name": data["first_name"],
+                "last_name": data["last_name"],
+                "current_station": WorkStationSerializer(user.current_station).data,
+            }
+            
+            # Encrypt the response
+            encrypted_data, encryption_key = encrypt_json_response(response_data)
+            
+            # Send encrypted data in response body
             response = Response(
-                {
-                    "username": data["username"],
-             
-                    "role": data["role"],
-                    "id": data["id"],
-                    "first_name": data["first_name"],
-                    "last_name": data["last_name"],
-                    "current_station": WorkStationSerializer(user.current_station).data,
-                },
+                {"data": encrypted_data},
                 status=status.HTTP_200_OK,
             )
+            
+            # Send decryption key via custom security header
+            response['X-Content-Security-Key'] = encryption_key
             response.set_cookie(
                 key="access",
                 value=str(data["access"]),
@@ -402,14 +428,43 @@ class LogoutView(APIView):
     def post(self, request):
         try:
             # Get tokens from cookies
+            access_token = request.COOKIES.get('access')
             refresh_token = request.COOKIES.get('refresh')
             session_token = request.COOKIES.get('session')
+            
+            # Blacklist the access token (prevents immediate reuse of stolen tokens)
+            if access_token:
+                try:
+                    from rest_framework_simplejwt.tokens import AccessToken
+                    from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
+                    
+                    token = AccessToken(access_token)
+                    jti = token.payload.get('jti')
+                    user_id = token.payload.get('user_id')
+                    exp = token.payload.get('exp')
+                    
+                    # Create OutstandingToken record if it doesn't exist
+                    outstanding_token, created = OutstandingToken.objects.get_or_create(
+                        jti=jti,
+                        defaults={
+                            'token': str(access_token),
+                            'user_id': user_id,
+                            'expires_at': datetime.fromtimestamp(exp, tz=dt_timezone.utc)
+                        }
+                    )
+                    
+                    # Blacklist the access token
+                    BlacklistedToken.objects.get_or_create(token=outstanding_token)
+                    print(f"Access token blacklisted: {jti}")
+                except Exception as e:
+                    print(f"Error blacklisting access token: {e}")
             
             # Blacklist the refresh token
             if refresh_token:
                 try:
                     token = RefreshToken(refresh_token)
                     token.blacklist()
+                    print(f"Refresh token blacklisted")
                 except Exception as e:
                     print(f"Error blacklisting refresh token: {e}")
             

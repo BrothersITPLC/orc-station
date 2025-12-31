@@ -2,7 +2,7 @@
 Security Input Validators
 
 Centralized validation utilities to detect and prevent:
-- XSS (Cross-Site Scripting) attacks
+- XSS (Cross-Site Scripting) attacks (including encoded and obfuscated variants)
 - SQL Injection attacks
 - Command Injection attacks
 - Buffer overflow attempts
@@ -12,47 +12,171 @@ Used by InputValidationMiddleware to validate all incoming requests.
 
 import re
 import html
+import urllib.parse
 from django.core.exceptions import ValidationError
 
 
-# XSS Detection Patterns
+def normalize_for_detection(value):
+    """
+    Normalize input by decoding all common encoding schemes.
+    This prevents attackers from bypassing detection using encoding.
+    
+    Args:
+        value (str): Input value to normalize
+        
+    Returns:
+        str: Normalized value with all encodings decoded
+    """
+    if not isinstance(value, str):
+        return value
+    
+    original = value
+    iterations = 0
+    max_iterations = 5  # Prevent infinite loops
+    
+    while iterations < max_iterations:
+        # Decode HTML entities
+        decoded = html.unescape(value)
+        
+        # Decode URL encoding
+        try:
+            decoded = urllib.parse.unquote(decoded)
+            decoded = urllib.parse.unquote_plus(decoded)
+        except Exception:
+            pass
+        
+        # Decode Unicode escape sequences (\u003c -> <)
+        try:
+            decoded = decoded.encode('utf-8').decode('unicode_escape')
+        except Exception:
+            pass
+        
+        # If no change occurred, we're done
+        if decoded == value:
+            break
+            
+        value = decoded
+        iterations += 1
+    
+    # Convert to lowercase for case-insensitive matching
+    return value.lower()
+
+
+# Enhanced XSS Detection Patterns
 XSS_PATTERNS = [
-    r'<script[^>]*>.*?</script>',      # Script tags
-    r'javascript:',                     # JavaScript protocol
-    r'on\w+\s*=',                       # Event handlers (onclick, onerror, etc.)
-    r'<iframe',                         # Iframes
-    r'<object',                         # Object tags
-    r'<embed',                          # Embed tags
-    r'<svg[^>]*>.*?</svg>',            # SVG with potential scripts
-    r'<img[^>]+onerror',                # Image with onerror
-    r'data:text/html',                  # Data URI with HTML
-    r'vbscript:',                       # VBScript protocol
-    r'<link[^>]+href[^>]*javascript:',  # Link with JavaScript
+    # Script tags (complete and partial)
+    r'<\s*script[^>]*>',
+    r'</\s*script\s*>',
+    r'<\s*scrip[t]?',  # Partial: <scrip, <scri, <scr
+    r'<\s*scri[p]?',
+    r'<\s*scr[i]?',
+    r'<\s*sc[r]?',
+    
+    # JavaScript protocol
+    r'javascript\s*:',
+    r'java\s*script\s*:',
+    r'j\s*a\s*v\s*a\s*s\s*c\s*r\s*i\s*p\s*t',  # Spaced out
+    
+    # Event handlers (all variants)
+    r'on\s*\w+\s*=',  # onclick, onerror, onload, etc.
+    r'on[a-z]+\s*=',
+    
+    # Iframe tags
+    r'<\s*iframe',
+    r'<\s*ifram[e]?',
+    r'<\s*ifra[m]?',
+    
+    # Object and Embed tags
+    r'<\s*object',
+    r'<\s*objec[t]?',
+    r'<\s*embed',
+    r'<\s*embe[d]?',
+    
+    # SVG with scripts
+    r'<\s*svg',
+    r'<\s*sv[g]?',
+    
+    # Image with event handlers
+    r'<\s*img[^>]*on\w+',
+    
+    # Link with javascript
+    r'<\s*link[^>]*href[^>]*javascript',
+    r'<\s*a[^>]*href[^>]*javascript',
+    
+    # Data URIs
+    r'data\s*:\s*text\s*/\s*html',
+    r'data\s*:\s*image\s*/\s*svg',
+    r'data\s*:\s*application\s*/\s*x',
+    
+    # VBScript
+    r'vbscript\s*:',
+    
+    # Style injection
+    r'<\s*style',
+    r'<\s*styl[e]?',
+    r'expression\s*\(',
+    r'@import',
+    r'-moz-binding',
+    
+    # Meta refresh
+    r'<\s*meta[^>]*http-equiv',
+    
+    # Base tag
+    r'<\s*base',
+    
+    # Form with action
+    r'<\s*form[^>]*action',
+    
+    # Common XSS patterns
+    r'alert\s*\(',
+    r'confirm\s*\(',
+    r'prompt\s*\(',
+    r'eval\s*\(',
+    r'settimeout',
+    r'setinterval',
 ]
 
-# SQL Injection Detection Patterns
+# SQL Injection Detection Patterns (enhanced)
 SQL_PATTERNS = [
-    r"('\s*(or|OR)\s*'?\d+'?\s*=\s*'?\d+'?)",      # OR 1=1
-    r"('\s*(union|UNION)\s+(select|SELECT))",       # UNION SELECT
-    r'(--|#|\/\*|\*\/)',                            # SQL comments
-    r"('\s*(drop|DROP)\s+(table|TABLE|database|DATABASE))",  # DROP TABLE/DATABASE
-    r"('\s*(delete|DELETE)\s+(from|FROM))",         # DELETE FROM
-    r"('\s*(insert|INSERT)\s+(into|INTO))",         # INSERT INTO
-    r"('\s*(update|UPDATE)\s+\w+\s+(set|SET))",     # UPDATE SET
-    r"('\s*(exec|EXEC|execute|EXECUTE))",           # EXEC/EXECUTE
-    r';\s*(drop|DROP|delete|DELETE|update|UPDATE)', # Statement chaining
-    r'(0x[0-9a-fA-F]+)',                            # Hex encoding
-    r"('\s*(and|AND|or|OR)\s+\d+\s*=\s*\d+)",      # AND/OR conditions
+    r"('\s*(or|and)\s*'?\d+'?\s*[=<>]+\s*'?\d+'?)",  # OR 1=1, AND 1=1
+    r"('\s*union\s+select)",
+    r"('\s*union\s+all\s+select)",
+    r'(--|#|\/\*|\*\/)',  # SQL comments
+    r"('\s*drop\s+(table|database))",
+    r"('\s*delete\s+from)",
+    r"('\s*insert\s+into)",
+    r"('\s*update\s+\w+\s+set)",
+    r"('\s*(exec|execute))",
+    r';\s*(drop|delete|update|insert|create|alter)',
+    r'(0x[0-9a-fA-F]+)',  # Hex encoding
+    r"('\s*(and|or)\s+\w+\s*[=<>])",
+    r'xp_cmdshell',  # SQL Server command execution
+    r'benchmark\s*\(',  # MySQL timing attack
+    r'sleep\s*\(',  # Time-based SQL injection
+    r'waitfor\s+delay',  # SQL Server timing
+    r"('\s*having\s+)",
+    r"('\s*group\s+by\s+)",
+    r'into\s+(outfile|dumpfile)',  # File writing
 ]
 
 # Command Injection Detection Patterns
 COMMAND_PATTERNS = [
-    r'[;&|`]',                  # Shell metacharacters
-    r'\$\(',                    # Command substitution $()
-    r'`.*?`',                   # Backtick command substitution
-    r'>\s*/dev/',               # File redirection to devices
-    r'\.\./|\.\.\\',            # Path traversal
-    r'%0a|%0d',                 # URL-encoded newlines (command injection)
+    r'[;&|`$]',  # Shell metacharacters
+    r'\$\(',  # Command substitution $()
+    r'`[^`]*`',  # Backtick command substitution
+    r'>\s*/dev/',  # File redirection to devices
+    r'\.\./|\.\.',  # Path traversal
+    r'%0a|%0d|%00',  # URL-encoded newlines and null bytes
+    r'\n|\r',  # Actual newlines
+    r'curl\s+',
+    r'wget\s+',
+    r'nc\s+',  # netcat
+    r'bash\s+',
+    r'sh\s+',
+    r'/bin/',
+    r'/etc/',
+    r'passwd',
+    r'shadow',
 ]
 
 # Compile patterns for performance
@@ -61,9 +185,35 @@ SQL_REGEX = re.compile('|'.join(SQL_PATTERNS), re.IGNORECASE)
 COMMAND_REGEX = re.compile('|'.join(COMMAND_PATTERNS), re.IGNORECASE)
 
 
+def contains_partial_tags(value):
+    """
+    Detect partial/incomplete HTML tags that might be attack fragments.
+    
+    Examples: <scrip, <scri, <ifram, etc.
+    """
+    if not isinstance(value, str):
+        return False
+    
+    dangerous_partial_tags = [
+        'scrip', 'scri', 'scr', 'sc',  # <script> fragments
+        'ifram', 'ifra', 'ifr',  # <iframe> fragments
+        'objec', 'obje', 'obj',  # <object> fragments
+        'embe', 'emb',  # <embed> fragments
+        'styl', 'sty',  # <style> fragments
+    ]
+    
+    normalized = normalize_for_detection(value)
+    
+    for tag in dangerous_partial_tags:
+        if f'<{tag}' in normalized or f'<{tag}>' in normalized:
+            return True
+    
+    return False
+
+
 def contains_xss(value):
     """
-    Check if value contains XSS attack patterns.
+    Check if value contains XSS attack patterns (including encoded/obfuscated).
     
     Args:
         value (str): Input value to check
@@ -74,7 +224,20 @@ def contains_xss(value):
     if not isinstance(value, str):
         return False
     
-    return bool(XSS_REGEX.search(value))
+    # Check original value
+    if XSS_REGEX.search(value):
+        return True
+    
+    # Check normalized (decoded) value
+    normalized = normalize_for_detection(value)
+    if XSS_REGEX.search(normalized):
+        return True
+    
+    # Check for partial tags
+    if contains_partial_tags(value):
+        return True
+    
+    return False
 
 
 def contains_sql_injection(value):
@@ -90,7 +253,16 @@ def contains_sql_injection(value):
     if not isinstance(value, str):
         return False
     
-    return bool(SQL_REGEX.search(value))
+    # Check original
+    if SQL_REGEX.search(value):
+        return True
+    
+    # Check normalized
+    normalized = normalize_for_detection(value)
+    if SQL_REGEX.search(normalized):
+        return True
+    
+    return False
 
 
 def contains_command_injection(value):
@@ -106,7 +278,16 @@ def contains_command_injection(value):
     if not isinstance(value, str):
         return False
     
-    return bool(COMMAND_REGEX.search(value))
+    # Check original
+    if COMMAND_REGEX.search(value):
+        return True
+    
+    # Check normalized
+    normalized = normalize_for_detection(value)
+    if COMMAND_REGEX.search(normalized):
+        return True
+    
+    return False
 
 
 def sanitize_string(value, max_length=255):
@@ -126,8 +307,12 @@ def sanitize_string(value, max_length=255):
     if not isinstance(value, str):
         return value
     
-    # Remove HTML tags (basic sanitization)
+    # Remove all HTML tags
     value = re.sub(r'<[^>]+>', '', value)
+    
+    # Remove script-like patterns
+    value = re.sub(r'javascript:', '', value, flags=re.IGNORECASE)
+    value = re.sub(r'on\w+\s*=', '', value, flags=re.IGNORECASE)
     
     # Trim whitespace
     value = value.strip()
@@ -182,6 +367,75 @@ def get_violation_type(value):
     return None
 
 
+def validate_alphanumeric(value, allow_spaces=True):
+    """
+    Validate that value contains only alphanumeric characters.
+    
+    Args:
+        value (str): Value to validate
+        allow_spaces (bool): Whether to allow spaces
+        
+    Returns:
+        bool: True if valid, False otherwise
+    """
+    if not isinstance(value, str):
+        return True
+    
+    if allow_spaces:
+        pattern = r'^[a-zA-Z0-9\s]+$'
+    else:
+        pattern = r'^[a-zA-Z0-9]+$'
+    
+    return bool(re.match(pattern, value))
+
+
+def validate_field_characters(value, field_name):
+    """
+    Validate field based on its type/name.
+    Enforces character restrictions per field.
+    
+    Args:
+        value (str): Value to validate
+        field_name (str): Field name to determine validation rules
+        
+    Raises:
+        ValidationError: If field contains invalid characters
+    """
+    if not isinstance(value, str) or not value:
+        return
+    
+    # Name fields: only alphanumeric + spaces
+    name_fields = ['first_name', 'last_name', 'name', 'username', 'full_name']
+    if field_name in name_fields:
+        if not validate_alphanumeric(value, allow_spaces=True):
+            raise ValidationError(
+                f"{field_name} can only contain letters, numbers, and spaces. "
+                f"Special characters like ( ) < > are not allowed."
+            )
+    
+    # Email: must match email pattern
+    if field_name == 'email':
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, value):
+            raise ValidationError(f"Invalid email format")
+    
+    # Phone: only numbers, spaces, +, -, ()
+    if field_name in ['phone_number', 'phone']:
+        phone_pattern = r'^[+\d\s\-()]+$'
+        if not re.match(phone_pattern, value):
+            raise ValidationError(
+                f"Phone number can only contain numbers and these characters: + - ( ) space"
+            )
+    
+    # Alphanumeric only fields (no special characters at all)
+    alphanumeric_only = ['tin_number', 'license_number', 'plate_number', 'kebele']
+    if field_name in alphanumeric_only:
+        if not validate_alphanumeric(value, allow_spaces=False):
+            raise ValidationError(
+                f"{field_name} can only contain letters and numbers. No special characters allowed."
+            )
+
+
 def validate_input(value, field_name="field", max_length=255, strict_mode=True):
     """
     Comprehensive validation of input value.
@@ -201,7 +455,10 @@ def validate_input(value, field_name="field", max_length=255, strict_mode=True):
     if not isinstance(value, str):
         return value
     
-    # Check for security violations
+    # First: Check field-specific character restrictions
+    validate_field_characters(value, field_name)
+    
+    # Second: Check for security violations
     violation = get_violation_type(value)
     
     if violation and strict_mode:

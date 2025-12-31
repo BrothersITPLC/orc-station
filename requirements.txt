@@ -58,3 +58,4 @@ pycryptodome==3.19.0
 python-decouple==3.8
 django-crontab==0.7.1
 django-celery-beat>=2.5
+cryptography==43.0.3
